@@ -599,7 +599,7 @@ func ConfigFactory() (*Config, error) {
 				// RecvRate int64 `mapstructure:"recv-rate"`
 
 				// Set true to enable the peer-exchange reactor
-				PexReactor: strings.ToLower(mode) != baseledgerModeValidator,
+				PexReactor: true,
 
 				// Comma separated list of peer IDs to keep private (will not be gossiped to
 				// other peers)
@@ -614,7 +614,7 @@ func ConfigFactory() (*Config, error) {
 
 				// DisableLegacy is used mostly for testing to enable or disable the legacy
 				// P2P stack.
-				DisableLegacy: strings.ToLower(mode) == baseledgerModeValidator,
+				// DisableLegacy bool `mapstructure:"disable-legacy"`
 
 				// Makes it possible to configure which queue backend the p2p
 				// layer uses. Options are: "fifo", "priority" and "wdrr",
