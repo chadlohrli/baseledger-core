@@ -16,13 +16,16 @@ import (
 
 const defaultABCIConnectionType = "socket"
 const defaultBlockTime = time.Second * 5
+const defaultConfigFilePath = "config.json"
 const defaultChainID = "peachtree"
+const defaultFastSync = true
 const defaultFilterPeers = false
 const defaultLogFormat = "plain"
 const defaultLogLevel = "info"
 const defaultMode = "validator"
 const defaultDBBackend = "goleveldb"
 const defaultGenesisFilePath = "genesis.json"
+const defaultGenesisURL = ""
 const defaultGenesisStateURL = "https://s3.amazonaws.com/static.provide.services/capabilities/baseledger-genesis-state.json"
 const defaultMempoolCacheSize = 256
 const defaultMempoolSize = 1024
@@ -41,8 +44,9 @@ const defaultTxIndexer = "kv"
 type Config struct {
 	config.Config
 
-	ChainID         string `json:"chain_id"`
-	GenesisStateURL *url.URL
+	ChainID         string   `json:"chain_id"`
+	GenesisURL      *url.URL `json:"genesis_url"`
+	GenesisStateURL *url.URL `json:"genesis_state_url"`
 
 	VaultID           *uuid.UUID `json:"vault_id"`
 	VaultKeyID        *uuid.UUID `json:"vault_key_id"`
@@ -97,6 +101,15 @@ func ConfigFactory() (*Config, error) {
 		chainID = os.Getenv("BASELEDGER_CHAIN_ID")
 	}
 
+	genesisURL, _ := url.Parse(defaultGenesisURL)
+	if os.Getenv("BASELEDGER_GENESIS_URL") != "" {
+		_url, err := url.Parse(os.Getenv("BASELEDGER_GENESIS_URL"))
+		if err != nil {
+			panic(err)
+		}
+		genesisURL = _url
+	}
+
 	genesisStateURL, _ := url.Parse(defaultGenesisStateURL)
 	if os.Getenv("BASELEDGER_GENESIS_STATE_URL") != "" {
 		stateURL, err := url.Parse(os.Getenv("BASELEDGER_GENESIS_STATE_URL"))
@@ -131,7 +144,10 @@ func ConfigFactory() (*Config, error) {
 		dbBackend = os.Getenv("BASELEDGER_DB_BACKEND")
 	}
 
-	fastSync := os.Getenv("BASELEDGER_FAST_SYNC") == "true"
+	fastSync := defaultFastSync
+	if os.Getenv("BASELEDGER_FAST_SYNC") != "" {
+		fastSync = os.Getenv("BASELEDGER_FAST_SYNC") == "true"
+	}
 
 	txIndexer := defaultTxIndexer
 	if os.Getenv("BASELEDGER_TX_INDEXER") != "" {
@@ -643,18 +659,20 @@ func ConfigFactory() (*Config, error) {
 		},
 
 		ChainID:           chainID,
+		GenesisURL:        genesisURL,
 		GenesisStateURL:   genesisStateURL,
 		VaultID:           vaultID,
 		VaultKeyID:        vaultKeyID,
 		VaultRefreshToken: &vaultRefreshToken,
 	}
 
-	genesisJSON, err := json.MarshalIndent(cfg, "", "    ")
+	cfgJSON, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
 		return nil, err
 	}
 
-	err = os.WriteFile(cfg.BaseConfig.Genesis, genesisJSON, 0644)
+	cfgFilePath := fmt.Sprintf("%s%s%s", rootPath, string(os.PathSeparator), defaultConfigFilePath)
+	err = os.WriteFile(cfgFilePath, cfgJSON, 0644)
 	if err != nil {
 		return nil, err
 	}

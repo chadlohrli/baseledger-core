@@ -21,19 +21,45 @@ func GenesisFactory(cfg *Config) (*types.GenesisDoc, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// write the latest config to disk
+	genesisJSON, err := json.MarshalIndent(genesis, "", "    ")
+	if err != nil {
+		return nil, err
+	}
+	err = os.WriteFile(cfg.BaseConfig.Genesis, genesisJSON, 0644)
+	if err != nil {
+		return nil, err
+	}
+
 	return genesis, nil
 }
 
 // GenesisDocFactory returns a GenesisDoc defining the initial parameters for a
-// tendermint blockchain, in particular its validator set.
+// tendermint blockchain, in particular its validator set; if a genesis URL is
+// provided by the given config, that resource is unmarshaled and returned.
 func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
+	if cfg.GenesisURL != nil {
+		genesisJSON, err := fetchGenesis(cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		var genesis *types.GenesisDoc
+		err = json.Unmarshal(genesisJSON, &genesis)
+		if err != nil {
+			return nil, err
+		}
+
+		return genesis, nil
+	}
+
 	genesisTime, err := time.Parse(time.RFC3339Nano, os.Getenv("BASELEDGER_GENESIS_TIMESTAMP"))
 	if err != nil {
 		genesisTime = time.Now()
 	}
 
 	var genesisState json.RawMessage
-
 	if cfg.GenesisStateURL != nil {
 		genesisState, err = fetchGenesisState(cfg)
 		if err != nil {
@@ -65,6 +91,26 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 		InitialHeight: int64(0),
 		Validators:    genesisValidatorsFactory(cfg),
 	}, nil
+}
+
+func fetchGenesis(cfg *Config) (json.RawMessage, error) {
+	client := &api.Client{
+		Host:   cfg.GenesisURL.Host,
+		Scheme: cfg.GenesisURL.Scheme,
+		Path:   "/",
+	}
+
+	_, resp, err := client.Get(cfg.GenesisURL.Path, map[string]interface{}{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch genesis JSON at url: %s; %s", cfg.GenesisURL.String(), err.Error())
+	}
+
+	raw, err := json.Marshal(resp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse genesis JSON; %s", err.Error())
+	}
+
+	return json.RawMessage(raw), nil
 }
 
 func fetchGenesisState(cfg *Config) (json.RawMessage, error) {
