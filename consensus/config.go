@@ -614,7 +614,7 @@ func ConfigFactory() (*Config, error) {
 
 				// DisableLegacy is used mostly for testing to enable or disable the legacy
 				// P2P stack.
-				// DisableLegacy bool `mapstructure:"disable-legacy"`
+				DisableLegacy: strings.ToLower(mode) == baseledgerModeValidator,
 
 				// Makes it possible to configure which queue backend the p2p
 				// layer uses. Options are: "fifo", "priority" and "wdrr",
