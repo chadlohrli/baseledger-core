@@ -586,7 +586,7 @@ func ConfigFactory() (*Config, error) {
 				// PrivatePeerIDs string `mapstructure:"private-peer-ids"`
 
 				// Toggle to disable guard against peers connecting from the same ip.
-				AllowDuplicateIP: true,
+				AllowDuplicateIP: false,
 
 				// Peer connection configuration.
 				// HandshakeTimeout time.Duration `mapstructure:"handshake-timeout"`
