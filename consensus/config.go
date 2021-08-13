@@ -21,14 +21,16 @@ const defaultFilterPeers = false
 const defaultLogFormat = "plain"
 const defaultLogLevel = "info"
 const defaultMode = "validator"
-const defaultDBBackend = "memdb"
+const defaultDBBackend = "goleveldb"
 const defaultGenesisFilePath = "genesis.json"
 const defaultGenesisStateURL = "https://s3.amazonaws.com/static.provide.services/capabilities/baseledger-genesis-state.json"
 const defaultMempoolCacheSize = 256
 const defaultMempoolSize = 1024
 const defaultNetworkName = "Baseledger"
 const defaultP2PListenAddress = "tcp://0.0.0.0:33333"
+const defaultP2PMaxConnections = uint16(32)
 const defaultP2PMaxPacketMessagePayloadSize = 22020096
+const defaultP2PPersistentPeerMaxDialPeriod = time.Second * 10
 const defaultPeerAlias = "prvd"
 const defaultRPCCORSOrigins = "*"
 const defaultRPCListenAddress = "tcp://0.0.0.0:1337"
@@ -202,6 +204,24 @@ func ConfigFactory() (*Config, error) {
 		p2pListenAddress = os.Getenv("BASELEDGER_P2P_LISTEN_ADDRESS")
 	}
 
+	p2pMaxConnections := defaultP2PMaxConnections
+	if os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS") != "" {
+		maxConnections, err := strconv.ParseInt(os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS"), 10, 16)
+		if err != nil {
+			panic(err)
+		}
+		p2pMaxConnections = uint16(maxConnections)
+	}
+
+	p2pPersistentPeerMaxDialPeriod := defaultP2PPersistentPeerMaxDialPeriod
+	if os.Getenv("BASELEDGER_P2P_PERSISTENT_PEER_MAX_DIAL_PERIOD") != "" {
+		duration, err := time.ParseDuration(os.Getenv("BASELEDGER_P2P_PERSISTENT_PEER_MAX_DIAL_PERIOD"))
+		if err != nil {
+			panic(err)
+		}
+		p2pPersistentPeerMaxDialPeriod = duration
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -367,7 +387,7 @@ func ConfigFactory() (*Config, error) {
 			Mempool: &config.MempoolConfig{
 				Version: config.MempoolV1,
 				// RootDir   string `mapstructure:"home"`
-				// Recheck   bool   `mapstructure:"recheck"`
+				Recheck:   true,
 				Broadcast: true,
 
 				// Maximum number of transactions in the mempool
@@ -534,7 +554,7 @@ func ConfigFactory() (*Config, error) {
 
 				// MaxConnections defines the maximum number of connected peers (inbound and
 				// outbound).
-				// MaxConnections uint16 `mapstructure:"max-connections"`
+				MaxConnections: p2pMaxConnections,
 
 				// MaxIncomingConnectionAttempts rate limits the number of incoming connection
 				// attempts per IP address.
@@ -544,7 +564,7 @@ func ConfigFactory() (*Config, error) {
 				// UnconditionalPeerIDs string `mapstructure:"unconditional-peer-ids"`
 
 				// Maximum pause when redialing a persistent peer (if zero, exponential backoff is used)
-				// PersistentPeersMaxDialPeriod time.Duration `mapstructure:"persistent-peers-max-dial-period"`
+				PersistentPeersMaxDialPeriod: p2pPersistentPeerMaxDialPeriod,
 
 				// Time to wait before flushing messages out on the connection
 				// FlushThrottleTimeout time.Duration `mapstructure:"flush-throttle-timeout"`
