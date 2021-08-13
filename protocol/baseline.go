@@ -11,7 +11,7 @@ import (
 
 const defaultABCISemanticVersion = "v1.0.0"
 
-var _ abcitypes.Application = (*Baseline)(nil)
+// var _ abcitypes.Application = (*Baseline)(nil)
 
 // Baseline is the tendermint Application Blockchain Interface (ABCI);
 // it must conform to the ABCI specification. Use extreme care when

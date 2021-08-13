@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"errors"
-
 	"github.com/providenetwork/baseledger/common"
 	"github.com/provideplatform/provide-go/api/baseline"
 	"github.com/provideplatform/provide-go/api/ident"
@@ -33,7 +31,8 @@ func authorizeAccessToken(refreshToken string) (*ident.Token, error) {
 
 func serviceFactory(cfg *common.Config) (*Service, error) {
 	if cfg.ProvideRefreshToken == nil {
-		return nil, errors.New("no bearer refresh token provided")
+		common.Log.Debug("baseline protocol service implementation not configured; no bearer refresh token provided")
+		return nil, nil
 	}
 
 	token, err := authorizeAccessToken(*cfg.ProvideRefreshToken)

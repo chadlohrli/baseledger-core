@@ -38,7 +38,7 @@ func TendermintFactory() (*Tendermint, error) {
 
 	baseline, err := protocol.BaselineProtocolFactory(cfg, genesis)
 	if err != nil {
-		common.Log.Debugf("baseledger core consensus will be initialized without a configured baseline protocol service implementation; %s", err.Error())
+		return nil, fmt.Errorf("failed to initialize baseledger core consensus; failed to initialize baseline protocol service implementation; %s", err.Error())
 	}
 
 	service, err := initTendermint(cfg, logger, genesis, baseline)
