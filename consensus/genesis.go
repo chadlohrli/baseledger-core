@@ -6,7 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/providenetwork/tendermint/crypto"
 	"github.com/providenetwork/tendermint/crypto/ed25519"
+	"github.com/providenetwork/tendermint/crypto/tmhash"
 	"github.com/providenetwork/tendermint/types"
 	"github.com/provideplatform/provide-go/api"
 )
@@ -45,10 +47,38 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 			return nil, err
 		}
 
+		// ensure compatibility with crypto.PubKey by not attempting to marshal
+		// vaulted public key types here...
+		var genesisMap map[string]interface{}
+		err = json.Unmarshal(genesisJSON, &genesisMap)
+		if err != nil {
+			return nil, err
+		}
+		delete(genesisMap, "valdiators")
+
+		genesisJSON, err = json.Marshal(genesisMap)
+		if err != nil {
+			return nil, err
+		}
+
 		var genesis *types.GenesisDoc
 		err = json.Unmarshal(genesisJSON, &genesis)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, v := range genesisMap["validators"].([]interface{}) {
+			if validator, ok := v.(map[string]interface{}); ok {
+				pubKey := []byte(validator["public_key"].(string))
+				genesis.Validators = append(genesis.Validators, types.GenesisValidator{
+					Address: crypto.Address(tmhash.SumTruncated(pubKey)),
+					PubKey: &ed25519.VaultedPublicKey{
+						PublicKey: pubKey,
+					},
+					Power: int64(validator["power"].(float64)),
+					Name:  validator["name"].(string),
+				})
+			}
 		}
 
 		return genesis, nil
@@ -146,7 +176,7 @@ func genesisValidatorsFactory(cfg *Config) []types.GenesisValidator {
 		Address: pubKey.Address(),
 		PubKey:  pubKey,
 		Power:   int64(defaultGenesisValidatorVotingPower),
-		Name:    "",
+		Name:    cfg.Moniker,
 	})
 
 	return validators
