@@ -101,7 +101,7 @@ func ConfigFactory() (*Config, error) {
 		chainID = os.Getenv("BASELEDGER_CHAIN_ID")
 	}
 
-	genesisURL, _ := url.Parse(defaultGenesisURL)
+	var genesisURL *url.URL
 	if os.Getenv("BASELEDGER_GENESIS_URL") != "" {
 		_url, err := url.Parse(os.Getenv("BASELEDGER_GENESIS_URL"))
 		if err != nil {
