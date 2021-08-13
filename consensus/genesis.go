@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/providenetwork/tendermint/crypto/ed25519"
-	tmjson "github.com/providenetwork/tendermint/libs/json"
 	"github.com/providenetwork/tendermint/types"
 	"github.com/provideplatform/provide-go/api"
 )
@@ -24,7 +23,7 @@ func GenesisFactory(cfg *Config) (*types.GenesisDoc, error) {
 	}
 
 	// write the latest config to disk
-	genesisJSON, err := tmjson.MarshalIndent(genesis, "", "    ")
+	genesisJSON, err := json.MarshalIndent(genesis, "", "    ")
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +46,7 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 		}
 
 		var genesis *types.GenesisDoc
-		err = tmjson.Unmarshal(genesisJSON, &genesis)
+		err = json.Unmarshal(genesisJSON, &genesis)
 		if err != nil {
 			return nil, err
 		}
