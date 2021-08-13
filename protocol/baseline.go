@@ -76,7 +76,7 @@ func (b *Baseline) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseI
 
 	return abcitypes.ResponseInitChain{
 		ConsensusParams: req.ConsensusParams,
-		Validators:      req.Validators,
+		Validators:      validators,
 	}
 }
 
