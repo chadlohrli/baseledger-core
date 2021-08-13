@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/providenetwork/baseledger/common"
 	"github.com/provideplatform/provide-go/api/baseline"
@@ -12,7 +11,7 @@ import (
 	"github.com/provideplatform/provide-go/api/vault"
 )
 
-// Service instances expose a compliant implementation of the Baseline protocol
+// Service instance exposes a compliant implementation of the Baseline protocol
 type Service struct {
 	baseline *baseline.Service
 	ident    *ident.Service
@@ -34,12 +33,12 @@ func authorizeAccessToken(refreshToken string) (*ident.Token, error) {
 
 func serviceFactory(cfg *common.Config) (*Service, error) {
 	if cfg.ProvideRefreshToken == nil {
-		return nil, errors.New("failed to initialize service; no bearer refresh token provided")
+		return nil, errors.New("no bearer refresh token provided")
 	}
 
 	token, err := authorizeAccessToken(*cfg.ProvideRefreshToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize service; no bearer access token authorized; %s", err.Error())
+		common.Log.Panicf("failed to initialize baseline protocol service implementation; bearer access token not authorized; %s", err.Error())
 	}
 
 	return &Service{

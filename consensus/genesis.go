@@ -13,6 +13,7 @@ import (
 	"github.com/provideplatform/provide-go/api"
 )
 
+const defaultGenesisAppVersion = uint64(0)
 const defaultGenesisValidatorVotingPower = 1
 
 // GenesisFactory initializes and returns the genesis state, which
@@ -87,6 +88,9 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 				PubKeyTypes: []string{
 					types.ABCIPubKeyTypeEd25519,
 				},
+			},
+			Version: types.VersionParams{
+				AppVersion: defaultGenesisAppVersion,
 			},
 		},
 		GenesisTime:   genesisTime,
