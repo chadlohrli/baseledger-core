@@ -28,7 +28,7 @@ type Baseline struct {
 func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Baseline, error) {
 	service, err := serviceFactory(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize service; %s", err.Error())
+		return nil, err
 	}
 
 	state, err := stateFactory(cfg, genesis)
