@@ -362,7 +362,7 @@ func ConfigFactory() (*Config, error) {
 			},
 
 			Consensus: &config.ConsensusConfig{
-				// RootDir string `mapstructure:"home"`
+				RootDir: rootPath,
 				WalPath: fmt.Sprintf("%s%swrite-ahead.log", rootPath, string(os.PathSeparator)),
 
 				// How long we wait for a proposal block before prevoting nil
@@ -405,8 +405,8 @@ func ConfigFactory() (*Config, error) {
 			Instrumentation: &config.InstrumentationConfig{},
 
 			Mempool: &config.MempoolConfig{
-				Version: config.MempoolV1,
-				// RootDir   string `mapstructure:"home"`
+				Version:   config.MempoolV1,
+				RootDir:   rootPath,
 				Recheck:   true,
 				Broadcast: true,
 
@@ -453,7 +453,7 @@ func ConfigFactory() (*Config, error) {
 			},
 
 			RPC: &config.RPCConfig{
-				// RootDir string `mapstructure:"home"`
+				RootDir: rootPath,
 
 				// TCP or UNIX socket address for the RPC server to listen on
 				ListenAddress: rpcListenAddress,
@@ -527,7 +527,7 @@ func ConfigFactory() (*Config, error) {
 			},
 
 			P2P: &config.P2PConfig{
-				// RootDir: rootPath
+				RootDir: rootPath,
 
 				// Address to listen for incoming connections
 				ListenAddress: p2pListenAddress,
