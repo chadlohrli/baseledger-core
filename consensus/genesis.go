@@ -9,6 +9,7 @@ import (
 	"github.com/providenetwork/tendermint/crypto"
 	"github.com/providenetwork/tendermint/crypto/ed25519"
 	"github.com/providenetwork/tendermint/crypto/tmhash"
+	tmjson "github.com/providenetwork/tendermint/libs/json"
 	"github.com/providenetwork/tendermint/types"
 	"github.com/provideplatform/provide-go/api"
 )
@@ -25,7 +26,7 @@ func GenesisFactory(cfg *Config) (*types.GenesisDoc, error) {
 	}
 
 	// write the latest config to disk
-	genesisJSON, err := json.MarshalIndent(genesis, "", "    ")
+	genesisJSON, err := tmjson.MarshalIndent(genesis, "", "    ")
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 		// ensure compatibility with crypto.PubKey by not attempting to marshal
 		// vaulted public key types here...
 		var genesisMap map[string]interface{}
-		err = json.Unmarshal(genesisJSON, &genesisMap)
+		err = tmjson.Unmarshal(genesisJSON, &genesisMap)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 		}
 
 		var genesis *types.GenesisDoc
-		err = json.Unmarshal(genesisJSON, &genesis)
+		err = tmjson.Unmarshal(genesisJSON, &genesis)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +136,7 @@ func fetchGenesis(cfg *Config) (json.RawMessage, error) {
 		return nil, fmt.Errorf("failed to fetch genesis JSON at url: %s; %s", cfg.GenesisURL.String(), err.Error())
 	}
 
-	raw, err := json.Marshal(resp)
+	raw, err := tmjson.Marshal(resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse genesis JSON; %s", err.Error())
 	}
