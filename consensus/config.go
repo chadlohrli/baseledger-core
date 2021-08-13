@@ -14,6 +14,10 @@ import (
 	prvdutil "github.com/provideplatform/provide-go/common"
 )
 
+const baseledgerModeFull = "full"
+const baseledgerModeSeed = "seed"
+const baseledgerModeValidator = "validator"
+
 const defaultABCIConnectionType = "socket"
 const defaultBlockTime = time.Second * 5
 const defaultConfigFilePath = "config.json"
@@ -54,15 +58,15 @@ type Config struct {
 }
 
 func (c *Config) IsFullNode() bool {
-	return c.Mode == "full"
+	return strings.ToLower(c.Mode) == baseledgerModeFull
 }
 
 func (c *Config) IsValidatorNode() bool {
-	return c.Mode == "validator"
+	return strings.ToLower(c.Mode) == baseledgerModeValidator
 }
 
 func (c *Config) IsSeedNode() bool {
-	return c.Mode == "seed"
+	return strings.ToLower(c.Mode) == baseledgerModeSeed
 }
 
 func ConfigFactory() (*Config, error) {
@@ -595,7 +599,7 @@ func ConfigFactory() (*Config, error) {
 				// RecvRate int64 `mapstructure:"recv-rate"`
 
 				// Set true to enable the peer-exchange reactor
-				PexReactor: true,
+				PexReactor: strings.ToLower(mode) != baseledgerModeValidator,
 
 				// Comma separated list of peer IDs to keep private (will not be gossiped to
 				// other peers)
