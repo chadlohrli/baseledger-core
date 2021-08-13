@@ -31,6 +31,31 @@ func main() {
 	common.Log.Debugf("starting baseledger node")
 	installSignalHandlers()
 
+	startConsensus()
+
+	timer := time.NewTicker(runloopTickInterval)
+	defer timer.Stop()
+
+	for !shuttingDown() {
+		select {
+		case <-timer.C:
+			// no-op for now...
+		case sig := <-sigs:
+			common.Log.Debugf("received signal: %s", sig)
+			stopConsensus()
+			shutdown()
+		case <-shutdownCtx.Done():
+			close(sigs)
+		default:
+			time.Sleep(runloopSleepInterval)
+		}
+	}
+
+	common.Log.Debug("exiting baseledger node")
+	cancelF()
+}
+
+func startConsensus() {
 	cfg, err := consensus.ConfigFactory()
 	if err != nil {
 		common.Log.Panicf("failed to initialize baseledger core consensus; failed to load configuration; %s", err.Error())
@@ -58,27 +83,6 @@ func main() {
 	}
 
 	common.Log.Debugf("initialized baseledger core consensus; %v", tendermint.String())
-
-	timer := time.NewTicker(runloopTickInterval)
-	defer timer.Stop()
-
-	for !shuttingDown() {
-		select {
-		case <-timer.C:
-			// no-op for now...
-		case sig := <-sigs:
-			common.Log.Debugf("received signal: %s", sig)
-			stopConsensus()
-			shutdown()
-		case <-shutdownCtx.Done():
-			close(sigs)
-		default:
-			time.Sleep(runloopSleepInterval)
-		}
-	}
-
-	common.Log.Debug("exiting baseledger node")
-	cancelF()
 }
 
 func stopConsensus() {
