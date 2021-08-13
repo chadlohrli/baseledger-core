@@ -6,9 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/providenetwork/tendermint/crypto"
+	"github.com/providenetwork/baseledger/common"
 	"github.com/providenetwork/tendermint/crypto/ed25519"
-	"github.com/providenetwork/tendermint/crypto/tmhash"
 	tmjson "github.com/providenetwork/tendermint/libs/json"
 	"github.com/providenetwork/tendermint/types"
 	"github.com/provideplatform/provide-go/api"
@@ -19,7 +18,7 @@ const defaultGenesisValidatorVotingPower = 1
 // GenesisFactory initializes and returns the genesis state, which
 // defines the initial conditions for a tendermint blockchain, including
 // its validator set and application state
-func GenesisFactory(cfg *Config) (*types.GenesisDoc, error) {
+func GenesisFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 	genesis, err := GenesisDocFactory(cfg)
 	if err != nil {
 		return nil, err
@@ -41,23 +40,9 @@ func GenesisFactory(cfg *Config) (*types.GenesisDoc, error) {
 // GenesisDocFactory returns a GenesisDoc defining the initial parameters for a
 // tendermint blockchain, in particular its validator set; if a genesis URL is
 // provided by the given config, that resource is unmarshaled and returned.
-func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
+func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 	if cfg.GenesisURL != nil {
 		genesisJSON, err := fetchGenesis(cfg)
-		if err != nil {
-			return nil, err
-		}
-
-		// ensure compatibility with crypto.PubKey by not attempting to marshal
-		// vaulted public key types here...
-		var genesisMap map[string]interface{}
-		err = tmjson.Unmarshal(genesisJSON, &genesisMap)
-		if err != nil {
-			return nil, err
-		}
-		delete(genesisMap, "valdiators")
-
-		genesisJSON, err = json.Marshal(genesisMap)
 		if err != nil {
 			return nil, err
 		}
@@ -66,20 +51,6 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 		err = tmjson.Unmarshal(genesisJSON, &genesis)
 		if err != nil {
 			return nil, err
-		}
-
-		for _, v := range genesisMap["validators"].([]interface{}) {
-			if validator, ok := v.(map[string]interface{}); ok {
-				pubKey := []byte(validator["public_key"].(string))
-				genesis.Validators = append(genesis.Validators, types.GenesisValidator{
-					Address: crypto.Address(tmhash.SumTruncated(pubKey)),
-					PubKey: &ed25519.VaultedPublicKey{
-						PublicKey: pubKey,
-					},
-					Power: int64(validator["power"].(float64)),
-					Name:  validator["name"].(string),
-				})
-			}
 		}
 
 		return genesis, nil
@@ -124,7 +95,7 @@ func GenesisDocFactory(cfg *Config) (*types.GenesisDoc, error) {
 	}, nil
 }
 
-func fetchGenesis(cfg *Config) (json.RawMessage, error) {
+func fetchGenesis(cfg *common.Config) (json.RawMessage, error) {
 	client := &api.Client{
 		Host:   cfg.GenesisURL.Host,
 		Scheme: cfg.GenesisURL.Scheme,
@@ -136,7 +107,7 @@ func fetchGenesis(cfg *Config) (json.RawMessage, error) {
 		return nil, fmt.Errorf("failed to fetch genesis JSON at url: %s; %s", cfg.GenesisURL.String(), err.Error())
 	}
 
-	raw, err := tmjson.Marshal(resp)
+	raw, err := json.Marshal(resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse genesis JSON; %s", err.Error())
 	}
@@ -144,7 +115,7 @@ func fetchGenesis(cfg *Config) (json.RawMessage, error) {
 	return json.RawMessage(raw), nil
 }
 
-func fetchGenesisState(cfg *Config) (json.RawMessage, error) {
+func fetchGenesisState(cfg *common.Config) (json.RawMessage, error) {
 	client := &api.Client{
 		Host:   cfg.GenesisStateURL.Host,
 		Scheme: cfg.GenesisStateURL.Scheme,
@@ -164,7 +135,7 @@ func fetchGenesisState(cfg *Config) (json.RawMessage, error) {
 	return json.RawMessage(raw), nil
 }
 
-func genesisValidatorsFactory(cfg *Config) []types.GenesisValidator {
+func genesisValidatorsFactory(cfg *common.Config) []types.GenesisValidator {
 	validators := make([]types.GenesisValidator, 0)
 
 	pubKey := &ed25519.VaultedPublicKey{

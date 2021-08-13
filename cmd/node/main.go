@@ -10,8 +10,6 @@ import (
 
 	"github.com/providenetwork/baseledger/common"
 	"github.com/providenetwork/baseledger/consensus"
-	"github.com/providenetwork/baseledger/protocol"
-	"github.com/providenetwork/tendermint/libs/service"
 )
 
 const runloopSleepInterval = 250 * time.Millisecond
@@ -23,15 +21,25 @@ var (
 	shutdownCtx context.Context
 	sigs        chan os.Signal
 
-	baseline   *protocol.Baseline
-	tendermint service.Service
+	baseledger *consensus.Tendermint
 )
+
+func init() {
+	var err error
+	baseledger, err = consensus.TendermintFactory()
+	if err != nil {
+		panic(err)
+	}
+}
 
 func main() {
 	common.Log.Debugf("starting baseledger node")
 	installSignalHandlers()
 
-	startConsensus()
+	err := baseledger.Start()
+	if err != nil {
+		panic(err)
+	}
 
 	timer := time.NewTicker(runloopTickInterval)
 	defer timer.Stop()
@@ -42,7 +50,7 @@ func main() {
 			// no-op for now...
 		case sig := <-sigs:
 			common.Log.Debugf("received signal: %s", sig)
-			stopConsensus()
+			baseledger.Stop()
 			shutdown()
 		case <-shutdownCtx.Done():
 			close(sigs)
@@ -53,46 +61,6 @@ func main() {
 
 	common.Log.Debug("exiting baseledger node")
 	cancelF()
-}
-
-func startConsensus() {
-	cfg, err := consensus.ConfigFactory()
-	if err != nil {
-		common.Log.Panicf("failed to initialize baseledger core consensus; failed to load configuration; %s", err.Error())
-	}
-
-	logger, err := consensus.LogFactory(cfg)
-	if err != nil {
-		common.Log.Panicf("failed to initialize baseledger core consensus; failed to initialize logger; %s", err.Error())
-	}
-
-	genesis, err := consensus.GenesisFactory(cfg)
-	if err != nil {
-		common.Log.Panicf("failed to initialize baseledger core consensus; failed to initialize genesis; %s", err.Error())
-	}
-
-	baseline = protocol.BaselineProtocolFactory(&cfg.Config, genesis)
-	tendermint, err = consensus.InitTendermint(cfg, logger, genesis, baseline)
-	if err != nil {
-		common.Log.Panicf("failed to initialize baseledger core consensus; %s", err.Error())
-	}
-
-	err = tendermint.Start()
-	if err != nil {
-		common.Log.Panicf("failed to start baseledger core consensus; %s", err.Error())
-	}
-
-	common.Log.Debugf("initialized baseledger core consensus; %v", tendermint.String())
-}
-
-func stopConsensus() {
-	defer func() {
-		if r := recover(); r != nil {
-			common.Log.Warningf("recovered while stopping baseledger core consensus; %s", r)
-		}
-	}()
-
-	tendermint.Stop()
 }
 
 func installSignalHandlers() {
