@@ -11,7 +11,7 @@ import (
 
 const defaultABCISemanticVersion = "v1.0.0"
 
-// var _ abcitypes.Application = (*Baseline)(nil)
+var _ abcitypes.Application = (*Baseline)(nil)
 
 // Baseline is the tendermint Application Blockchain Interface (ABCI);
 // it must conform to the ABCI specification. Use extreme care when
@@ -60,6 +60,7 @@ func (b *Baseline) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheck
 }
 
 func (b *Baseline) Commit() abcitypes.ResponseCommit {
+	b.State.Save() // TODO-- buffer this
 	return abcitypes.ResponseCommit{}
 }
 
@@ -68,6 +69,7 @@ func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseD
 }
 
 func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
+	common.Log.Debugf("END BLOCK %v", b)
 	return abcitypes.ResponseEndBlock{}
 }
 
@@ -79,6 +81,9 @@ func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEnd
 // LastBlockHeight (int64): Latest block for which the app has called Commit
 // Version (string): The application software semantic version
 func (b *Baseline) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
+	common.Log.Debugf("INFO %v", b)
+	// b.State.Height++
+
 	return abcitypes.ResponseInfo{
 		AppVersion:       b.Genesis.ConsensusParams.Version.AppVersion,
 		Data:             "hello world",

@@ -54,6 +54,7 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 			return nil, err
 		}
 
+		common.Log.Debugf("validators: %v", genesis.Validators)
 		return genesis, nil
 	}
 
