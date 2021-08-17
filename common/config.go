@@ -40,6 +40,7 @@ const defaultP2PMaxConnections = uint16(32)
 const defaultP2PMaxPacketMessagePayloadSize = 22020096
 const defaultP2PPersistentPeerMaxDialPeriod = time.Second * 10
 const defaultRPCMaxSubscriptionsPerClient = 32
+const defaultRPCMaxSubscriptionClients = 1024
 const defaultPeerAlias = "prvd"
 const defaultRPCCORSOrigins = "*"
 const defaultRPCListenAddress = "tcp://0.0.0.0:1337"
@@ -191,6 +192,15 @@ func ConfigFactory() (*Config, error) {
 			panic(err)
 		}
 		rpcMaxOpenConnections = int(maxConnections)
+	}
+
+	rpcMaxSubscriptionClients := defaultRPCMaxSubscriptionClients
+	if os.Getenv("BASELEDGER_RPC_MAX_SUBSCRIPTION_CLIENTS") != "" {
+		maxClients, err := strconv.ParseInt(os.Getenv("BASELEDGER_RPC_MAX_SUBSCRIPTION_CLIENTS"), 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		rpcMaxSubscriptionClients = int(maxClients)
 	}
 
 	rpcMaxSubscriptionsPerClient := defaultRPCMaxSubscriptionsPerClient
@@ -512,7 +522,7 @@ func ConfigFactory() (*Config, error) {
 				// Maximum number of unique clientIDs that can /subscribe
 				// If you're using /broadcast_tx_commit, set to the estimated maximum number
 				// of broadcast_tx_commit calls per block.
-				// MaxSubscriptionClients int `mapstructure:"max-subscription-clients"`
+				MaxSubscriptionClients: rpcMaxSubscriptionClients,
 
 				// Maximum number of unique queries a given client can /subscribe to
 				// If you're using GRPC (or Local RPC client) and /broadcast_tx_commit, set
