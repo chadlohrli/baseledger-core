@@ -24,6 +24,7 @@ const defaultBlockTime = time.Second * 5
 const defaultConfigFilePath = "config.json"
 const defaultChainID = "peachtree"
 const defaultFastSync = true
+const defaultFastSyncVersion = "v2"
 const defaultFilterPeers = false
 const defaultLogFormat = "plain"
 const defaultMode = "validator"
@@ -125,6 +126,11 @@ func ConfigFactory() (*Config, error) {
 		fastSync = os.Getenv("BASELEDGER_FAST_SYNC") == "true"
 	}
 
+	fastSyncVersion := defaultFastSyncVersion
+	if os.Getenv("BASELEDGER_FAST_SYNC_VERSION") != "" {
+		fastSyncVersion = os.Getenv("BASELEDGER_FAST_SYNC_VERSION")
+	}
+
 	txIndexer := defaultTxIndexer
 	if os.Getenv("BASELEDGER_TX_INDEXER") != "" {
 		txIndexer = os.Getenv("BASELEDGER_TX_INDEXER")
@@ -196,14 +202,14 @@ func ConfigFactory() (*Config, error) {
 		p2pListenAddress = os.Getenv("BASELEDGER_P2P_LISTEN_ADDRESS")
 	}
 
-	p2pMaxConnections := defaultP2PMaxConnections
-	if os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS") != "" {
-		maxConnections, err := strconv.ParseInt(os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS"), 10, 16)
-		if err != nil {
-			panic(err)
-		}
-		p2pMaxConnections = uint16(maxConnections)
-	}
+	// p2pMaxConnections := defaultP2PMaxConnections
+	// if os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS") != "" {
+	// 	maxConnections, err := strconv.ParseInt(os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS"), 10, 16)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	p2pMaxConnections = uint16(maxConnections)
+	// }
 
 	p2pPersistentPeerMaxDialPeriod := defaultP2PPersistentPeerMaxDialPeriod
 	if os.Getenv("BASELEDGER_P2P_PERSISTENT_PEER_MAX_DIAL_PERIOD") != "" {
@@ -247,7 +253,7 @@ func ConfigFactory() (*Config, error) {
 	}
 
 	p2pSeedPeers := os.Getenv("BASELEDGER_SEEDS")
-	p2pBootstrapPeers := os.Getenv("BASELEDGER_BOOTSTRAP_PEERS")
+	// p2pBootstrapPeers := os.Getenv("BASELEDGER_BOOTSTRAP_PEERS")
 	p2pPersistentPeers := os.Getenv("BASELEDGER_PERSISTENT_PEERS")
 
 	var provideRefreshToken *string
@@ -307,6 +313,12 @@ func ConfigFactory() (*Config, error) {
 				//   - No priv_validator_key.json, priv_validator_state.json
 				Mode: mode,
 
+				// Path to the JSON file containing the private key to use as a validator in the consensus protocol
+				PrivValidatorKey: fmt.Sprintf("%s%svalidator.json", rootPath, string(os.PathSeparator)),
+
+				// Path to the JSON file containing the last sign state of a validator
+				PrivValidatorState: fmt.Sprintf("%s%svalidator-state.json", rootPath, string(os.PathSeparator)),
+
 				// A custom human readable name for this node
 				Moniker: peerAlias,
 
@@ -363,8 +375,8 @@ func ConfigFactory() (*Config, error) {
 				VaultRefreshToken: vaultRefreshToken,
 			},
 
-			BlockSync: &config.BlockSyncConfig{
-				Version: config.BlockSyncV0,
+			FastSync: &config.FastSyncConfig{
+				Version: fastSyncVersion,
 			},
 
 			Consensus: &config.ConsensusConfig{
@@ -411,7 +423,6 @@ func ConfigFactory() (*Config, error) {
 			Instrumentation: &config.InstrumentationConfig{},
 
 			Mempool: &config.MempoolConfig{
-				Version:   config.MempoolV1,
 				RootDir:   rootPath,
 				Recheck:   true,
 				Broadcast: true,
@@ -551,7 +562,7 @@ func ConfigFactory() (*Config, error) {
 				// Comma separated list of peers to be added to the peer store
 				// on startup. Either BootstrapPeers or PersistentPeers are
 				// needed for peer discovery
-				BootstrapPeers: p2pBootstrapPeers,
+				// BootstrapPeers: p2pBootstrapPeers,
 
 				// Comma separated list of nodes to keep persistent connections to
 				PersistentPeers: p2pPersistentPeers,
@@ -580,7 +591,7 @@ func ConfigFactory() (*Config, error) {
 
 				// MaxConnections defines the maximum number of connected peers (inbound and
 				// outbound).
-				MaxConnections: p2pMaxConnections,
+				// MaxConnections: p2pMaxConnections,
 
 				// MaxIncomingConnectionAttempts rate limits the number of incoming connection
 				// attempts per IP address.
@@ -628,29 +639,6 @@ func ConfigFactory() (*Config, error) {
 				// QueueType string `mapstructure:"queue-type"`
 			},
 
-			// PrivValidator is the local validator for use in the consensus protocdol
-			PrivValidator: &config.PrivValidatorConfig{
-				// Path to the JSON file containing the private key to use as a validator in the consensus protocol
-				Key: fmt.Sprintf("%s%svalidator.json", rootPath, string(os.PathSeparator)),
-
-				// Path to the JSON file containing the last sign state of a validator
-				State: fmt.Sprintf("%s%svalidator-state.json", rootPath, string(os.PathSeparator)),
-
-				// TCP or UNIX socket address for Tendermint to listen on for
-				// connections from an external PrivValidator process
-				// ListenAddr string `mapstructure:"laddr"`
-
-				// Client certificate generated while creating needed files for secure connection.
-				// If a remote validator address is provided but no certificate, the connection will be insecure
-				// ClientCertificate string `mapstructure:"client-certificate-file"`
-
-				// Client key generated while creating certificates for secure connection
-				// ClientKey string `mapstructure:"client-key-file"`
-
-				// Path Root Certificate Authority used to sign both client and server certificates
-				// RootCA string `mapstructure:"root-ca-file"`
-			},
-
 			StateSync: &config.StateSyncConfig{
 				Enable: false,
 				// TempDir             string        `mapstructure:"temp_dir"`
@@ -664,7 +652,7 @@ func ConfigFactory() (*Config, error) {
 			},
 
 			TxIndex: &config.TxIndexConfig{
-				Indexer: []string{txIndexer},
+				Indexer: txIndexer,
 			},
 		},
 

@@ -124,6 +124,10 @@ func (b *Baseline) OfferSnapshot(req abcitypes.RequestOfferSnapshot) abcitypes.R
 	return abcitypes.ResponseOfferSnapshot{}
 }
 
+func (b *Baseline) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
+	return abcitypes.ResponseSetOption{}
+}
+
 func (b *Baseline) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	return abcitypes.ResponseQuery{Code: 0}
 }
