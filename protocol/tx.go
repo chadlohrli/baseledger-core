@@ -15,9 +15,9 @@ func TransactionFromRaw(tx []byte) (*Transaction, error) {
 	}, nil
 }
 
-func (tx *Transaction) calculateGas() uint64 {
+func (tx *Transaction) calculateGas() int64 {
 	// TODO
-	return uint64(0)
+	return int64(0)
 }
 
 func (tx *Transaction) isValid() (code uint32) {

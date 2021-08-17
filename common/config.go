@@ -39,6 +39,7 @@ const defaultP2PListenAddress = "tcp://0.0.0.0:33333"
 const defaultP2PMaxConnections = uint16(32)
 const defaultP2PMaxPacketMessagePayloadSize = 22020096
 const defaultP2PPersistentPeerMaxDialPeriod = time.Second * 10
+const defaultRPCMaxSubscriptionsPerClient = 32
 const defaultPeerAlias = "prvd"
 const defaultRPCCORSOrigins = "*"
 const defaultRPCListenAddress = "tcp://0.0.0.0:1337"
@@ -136,10 +137,10 @@ func ConfigFactory() (*Config, error) {
 		txIndexer = os.Getenv("BASELEDGER_TX_INDEXER")
 	}
 
-	abciConnectionType := defaultABCIConnectionType
-	if os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE") != "" {
-		abciConnectionType = os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE")
-	}
+	// abciConnectionType := defaultABCIConnectionType
+	// if os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE") != "" {
+	// 	abciConnectionType = os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE")
+	// }
 
 	filterPeers := defaultFilterPeers
 	if os.Getenv("BASELEDGER_FILTER_PEERS") != "" {
@@ -190,6 +191,15 @@ func ConfigFactory() (*Config, error) {
 			panic(err)
 		}
 		rpcMaxOpenConnections = int(maxConnections)
+	}
+
+	rpcMaxSubscriptionsPerClient := defaultRPCMaxSubscriptionsPerClient
+	if os.Getenv("BASELEDGER_RPC_MAX_CLIENT_SUBSCRIPTIONS") != "" {
+		maxSubscriptions, err := strconv.ParseInt(os.Getenv("BASELEDGER_RPC_MAX_CLIENT_SUBSCRIPTIONS"), 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		rpcMaxSubscriptionsPerClient = int(maxSubscriptions)
 	}
 
 	peerAlias := defaultPeerAlias
@@ -364,7 +374,7 @@ func ConfigFactory() (*Config, error) {
 				NodeKey: fmt.Sprintf("%s%snode.json", rootPath, string(os.PathSeparator)),
 
 				// Mechanism to connect to the ABCI application: socket | grpc
-				ABCI: abciConnectionType,
+				ABCI: "asdf",
 
 				// If true, query the ABCI app on connecting to a new peer
 				// so the app can decide if we should keep the connection or not
@@ -404,7 +414,7 @@ func ConfigFactory() (*Config, error) {
 				// How long we wait after committing a block, before starting on the new
 				// height (this gives us a chance to receive some more precommits, even
 				// though we already have +2/3).
-				// TimeoutCommit: time.Second * 0,
+				// TimeoutCommit: time.Millisecond * 25,
 
 				// Make progress as soon as we have all the precommits (as if TimeoutCommit = 0)
 				SkipTimeoutCommit: true,
@@ -507,7 +517,7 @@ func ConfigFactory() (*Config, error) {
 				// Maximum number of unique queries a given client can /subscribe to
 				// If you're using GRPC (or Local RPC client) and /broadcast_tx_commit, set
 				// to the estimated maximum number of broadcast_tx_commit calls per block.
-				// MaxSubscriptionsPerClient int `mapstructure:"max-subscriptions-per-client"`
+				MaxSubscriptionsPerClient: rpcMaxSubscriptionsPerClient,
 
 				// How long to wait for a tx to be committed during /broadcast_tx_commit
 				// WARNING: Using a value larger than 10s will result in increasing the

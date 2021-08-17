@@ -20,6 +20,7 @@ func init() {
 type State struct {
 	path string `json:"-"`
 
+	Name       string             `json:"name"`
 	Height     int64              `json:"height"`
 	Root       []byte             `json:"root"`
 	Validators []*types.Validator `json:"validators"`
@@ -43,11 +44,11 @@ func (s *State) Save() error {
 	return nil
 }
 
-func stateFactory(cfg *common.Config, genesis *types.GenesisDoc) (*State, error) {
+func stateFactory(cfg *common.Config, name string, genesis *types.GenesisDoc) (*State, error) {
 	stateMutex.Lock()
 	defer stateMutex.Unlock()
 
-	path := fmt.Sprintf("%s%sabci-state.json", cfg.RootDir, string(os.PathSeparator))
+	path := fmt.Sprintf("%s%sabci-state-%s.json", cfg.RootDir, string(os.PathSeparator), name)
 	if _, err := os.Stat(path); err == nil {
 		stateJSON, err := os.ReadFile(path)
 		if err != nil {
@@ -66,6 +67,7 @@ func stateFactory(cfg *common.Config, genesis *types.GenesisDoc) (*State, error)
 
 	return &State{
 		path:       path,
+		Name:       name,
 		Height:     0,
 		Root:       []byte{},
 		Validators: make([]*types.Validator, 0),

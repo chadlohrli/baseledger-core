@@ -1,6 +1,8 @@
 package protocol
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/providenetwork/baseledger/common"
@@ -9,9 +11,14 @@ import (
 	"github.com/providenetwork/tendermint/types"
 )
 
-const defaultABCISemanticVersion = "v1.0.0"
+const abciStateCheckTx = "check_tx"
+const abciStateDeliverTx = "deliver_tx"
+const abciStateCommit = "commit"
 
-var _ abcitypes.Application = (*Baseline)(nil)
+const eventTypeBlock = "block"
+const eventNewHeader = "header"
+
+const defaultABCISemanticVersion = "v1.0.0"
 
 // Baseline is the tendermint Application Blockchain Interface (ABCI);
 // it must conform to the ABCI specification. Use extreme care when
@@ -21,8 +28,11 @@ type Baseline struct {
 	Config  *common.Config
 	Genesis *types.GenesisDoc
 	Service *Service
-	State   *State
 	Version string
+
+	CheckTxState   *State
+	DeliverTxState *State
+	CommitState    *State
 }
 
 func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Baseline, error) {
@@ -31,16 +41,30 @@ func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Ba
 		return nil, err
 	}
 
-	state, err := stateFactory(cfg, genesis)
+	checkTxState, err := stateFactory(cfg, abciStateCheckTx, genesis)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize ABCI state; %s", err.Error())
+		return nil, fmt.Errorf("failed to initialize ABCI check tx state; %s", err.Error())
+	}
+
+	deliverTxState, err := stateFactory(cfg, abciStateDeliverTx, genesis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize ABCI deliver tx state; %s", err.Error())
+	}
+
+	commitState, err := stateFactory(cfg, abciStateCommit, genesis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize ABCI commit state; %s", err.Error())
 	}
 
 	return &Baseline{
 		Config:  cfg,
 		Genesis: genesis,
 		Service: service,
-		State:   state,
+
+		CheckTxState:   checkTxState,
+		DeliverTxState: deliverTxState,
+		CommitState:    commitState,
+
 		Version: defaultABCISemanticVersion,
 	}, nil
 }
@@ -50,18 +74,39 @@ func (b *Baseline) ApplySnapshotChunk(req abcitypes.RequestApplySnapshotChunk) a
 }
 
 func (b *Baseline) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	return abcitypes.ResponseBeginBlock{}
+	resp := abcitypes.ResponseBeginBlock{}
+
+	rawHeader, err := json.Marshal(req.Header)
+	if err == nil {
+		resp.Events = append(resp.Events, abcitypes.Event{
+			Type: "block",
+			Attributes: []abcitypes.EventAttribute{
+				{
+					Key:   []byte(eventNewHeader),
+					Value: rawHeader,
+				},
+			},
+		})
+	}
+
+	return resp
 }
 
 func (b *Baseline) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 	tx, _ := TransactionFromRaw(req.Tx)
 	code := tx.isValid()
-	return abcitypes.ResponseCheckTx{Code: code, GasWanted: 1}
+	return abcitypes.ResponseCheckTx{
+		Code:      code,
+		GasWanted: tx.calculateGas(),
+	}
 }
 
-func (b *Baseline) Commit() abcitypes.ResponseCommit {
-	b.State.Save() // TODO-- buffer this
-	return abcitypes.ResponseCommit{}
+func (b Baseline) Commit() abcitypes.ResponseCommit {
+	b.CommitState.Height++
+	b.CommitState.Save() // TODO-- buffer this
+	return abcitypes.ResponseCommit{
+		RetainHeight: b.CommitState.Height,
+	}
 }
 
 func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
@@ -69,7 +114,7 @@ func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseD
 }
 
 func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	common.Log.Debugf("END BLOCK %v", b)
+	common.Log.Debugf("END BLOCK; %v", req)
 	return abcitypes.ResponseEndBlock{}
 }
 
@@ -81,14 +126,11 @@ func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEnd
 // LastBlockHeight (int64): Latest block for which the app has called Commit
 // Version (string): The application software semantic version
 func (b *Baseline) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
-	common.Log.Debugf("INFO %v", b)
-	// b.State.Height++
-
 	return abcitypes.ResponseInfo{
 		AppVersion:       b.Genesis.ConsensusParams.Version.AppVersion,
 		Data:             "hello world",
-		LastBlockAppHash: b.State.Root,
-		LastBlockHeight:  b.State.Height,
+		LastBlockAppHash: b.CommitState.Root,
+		LastBlockHeight:  b.CommitState.Height,
 		Version:          b.Version,
 	}
 }
@@ -105,6 +147,16 @@ func (b *Baseline) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseI
 			Power: validator.Power,
 		})
 	}
+
+	pubkey, _ := base64.StdEncoding.DecodeString("6su8FUyDc9fLCRNODSovoqS9r4v+8ge5Epm43OQAQr0=")
+	validators = append(validators, abcitypes.ValidatorUpdate{
+		PubKey: crypto.PublicKey{
+			Sum: &crypto.PublicKey_Ed25519{
+				Ed25519: pubkey,
+			},
+		},
+		Power: 1,
+	})
 
 	return abcitypes.ResponseInitChain{
 		ConsensusParams: req.ConsensusParams,
@@ -129,5 +181,6 @@ func (b *Baseline) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseS
 }
 
 func (b *Baseline) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
+	common.Log.Debugf("QUERY; %v", req)
 	return abcitypes.ResponseQuery{Code: 0}
 }

@@ -7,14 +7,13 @@ import (
 	"time"
 
 	"github.com/providenetwork/baseledger/common"
-	"github.com/providenetwork/tendermint/crypto/ed25519"
 	tmjson "github.com/providenetwork/tendermint/libs/json"
 	tmproto "github.com/providenetwork/tendermint/proto/tendermint/types"
 	"github.com/providenetwork/tendermint/types"
 	"github.com/provideplatform/provide-go/api"
 )
 
-const defaultGenesisAppVersion = uint64(0)
+const defaultGenesisAppVersion = 0x1
 const defaultGenesisValidatorVotingPower = 1
 
 // GenesisFactory initializes and returns the genesis state, which
@@ -55,7 +54,22 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 			return nil, err
 		}
 
-		common.Log.Debugf("validators: %v", genesis.Validators)
+		return genesis, nil
+	}
+
+	if _, err := os.Stat(cfg.Genesis); err == nil {
+		// TODO-- match this against contents of genesis url if one is provided...?
+		genesisJSON, err := os.ReadFile(cfg.Genesis)
+		if err != nil {
+			return nil, err
+		}
+
+		var genesis *types.GenesisDoc
+		err = tmjson.Unmarshal(genesisJSON, &genesis)
+		if err != nil {
+			return nil, err
+		}
+
 		return genesis, nil
 	}
 
@@ -97,8 +111,8 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 			},
 		},
 		GenesisTime:   genesisTime,
-		InitialHeight: int64(0),
-		Validators:    genesisValidatorsFactory(cfg),
+		InitialHeight: int64(1),
+		// Validators:    genesisValidatorsFactory(cfg),
 	}, nil
 }
 
@@ -145,18 +159,18 @@ func fetchGenesisState(cfg *common.Config) (json.RawMessage, error) {
 func genesisValidatorsFactory(cfg *common.Config) []types.GenesisValidator {
 	validators := make([]types.GenesisValidator, 0)
 
-	pubKey := &ed25519.VaultedPublicKey{
-		VaultID:           *cfg.VaultID,
-		VaultKeyID:        *cfg.VaultKeyID,
-		VaultRefreshToken: *cfg.VaultRefreshToken,
-	}
+	// pubKey := &ed25519.VaultedPublicKey{
+	// 	VaultID:           *cfg.VaultID,
+	// 	VaultKeyID:        *cfg.VaultKeyID,
+	// 	VaultRefreshToken: *cfg.VaultRefreshToken,
+	// }
 
-	validators = append(validators, types.GenesisValidator{
-		Address: pubKey.Address(),
-		PubKey:  pubKey,
-		Power:   int64(defaultGenesisValidatorVotingPower),
-		Name:    cfg.Moniker,
-	})
+	// validators = append(validators, types.GenesisValidator{
+	// 	Address: pubKey.Address(),
+	// 	PubKey:  pubKey,
+	// 	Power:   int64(defaultGenesisValidatorVotingPower),
+	// 	Name:    cfg.Moniker,
+	// })
 
 	return validators
 }
