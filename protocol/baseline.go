@@ -79,7 +79,7 @@ func (b *Baseline) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.Respons
 	rawHeader, err := json.Marshal(req.Header)
 	if err == nil {
 		resp.Events = append(resp.Events, abcitypes.Event{
-			Type: "block",
+			Type: eventTypeBlock,
 			Attributes: []abcitypes.EventAttribute{
 				{
 					Key:   []byte(eventNewHeader),
