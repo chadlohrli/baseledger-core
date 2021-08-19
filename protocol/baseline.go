@@ -159,6 +159,7 @@ func (b *Baseline) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseI
 	})
 
 	return abcitypes.ResponseInitChain{
+		AppHash:         b.CommitState.Root,
 		ConsensusParams: req.ConsensusParams,
 		Validators:      validators,
 	}
