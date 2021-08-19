@@ -601,13 +601,13 @@ func ConfigFactory() (*Config, error) {
 				//
 				// TODO: Remove once p2p refactor is complete in favor of MaxConnections.
 				// ref: https://github.com/providenetwork/tendermint/issues/5670
-				MaxNumInboundPeers: p2pMaxConnections,
+				MaxNumInboundPeers: int(p2pMaxConnections),
 
 				// Maximum number of outbound peers to connect to, excluding persistent peers.
 				//
 				// TODO: Remove once p2p refactor is complete in favor of MaxConnections.
 				// ref: https://github.com/providenetwork/tendermint/issues/5670
-				MaxNumOutboundPeers: p2pMaxConnections,
+				MaxNumOutboundPeers: int(p2pMaxConnections),
 
 				// MaxConnections defines the maximum number of connected peers (inbound and
 				// outbound).
