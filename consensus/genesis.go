@@ -128,7 +128,19 @@ func fetchGenesis(cfg *common.Config) (json.RawMessage, error) {
 		return nil, fmt.Errorf("failed to fetch genesis JSON at url: %s; %s", cfg.GenesisURL.String(), err.Error())
 	}
 
-	raw, err := json.Marshal(resp)
+	var genesis map[string]interface{}
+	if response, ok := resp.(map[string]interface{}); ok {
+		genesis = response
+
+		// handle genesis by way of rpc	response
+		if result, resultOk := genesis["result"].(map[string]interface{}); resultOk {
+			if resultGenesis, resultGenesisOk := result["genesis"].(map[string]interface{}); resultGenesisOk {
+				genesis = resultGenesis
+			}
+		}
+	}
+
+	raw, err := json.Marshal(genesis)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse genesis JSON; %s", err.Error())
 	}
@@ -154,23 +166,4 @@ func fetchGenesisState(cfg *common.Config) (json.RawMessage, error) {
 	}
 
 	return json.RawMessage(raw), nil
-}
-
-func genesisValidatorsFactory(cfg *common.Config) []types.GenesisValidator {
-	validators := make([]types.GenesisValidator, 0)
-
-	// pubKey := &ed25519.VaultedPublicKey{
-	// 	VaultID:           *cfg.VaultID,
-	// 	VaultKeyID:        *cfg.VaultKeyID,
-	// 	VaultRefreshToken: *cfg.VaultRefreshToken,
-	// }
-
-	// validators = append(validators, types.GenesisValidator{
-	// 	Address: pubKey.Address(),
-	// 	PubKey:  pubKey,
-	// 	Power:   int64(defaultGenesisValidatorVotingPower),
-	// 	Name:    cfg.Moniker,
-	// })
-
-	return validators
 }
