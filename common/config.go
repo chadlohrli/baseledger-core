@@ -222,14 +222,14 @@ func ConfigFactory() (*Config, error) {
 		p2pListenAddress = os.Getenv("BASELEDGER_P2P_LISTEN_ADDRESS")
 	}
 
-	// p2pMaxConnections := defaultP2PMaxConnections
-	// if os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS") != "" {
-	// 	maxConnections, err := strconv.ParseInt(os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS"), 10, 16)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	p2pMaxConnections = uint16(maxConnections)
-	// }
+	p2pMaxConnections := defaultP2PMaxConnections
+	if os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS") != "" {
+		maxConnections, err := strconv.ParseInt(os.Getenv("BASELEDGER_P2P_MAX_CONNECTIONS"), 10, 16)
+		if err != nil {
+			panic(err)
+		}
+		p2pMaxConnections = uint16(maxConnections)
+	}
 
 	p2pPersistentPeerMaxDialPeriod := defaultP2PPersistentPeerMaxDialPeriod
 	if os.Getenv("BASELEDGER_P2P_PERSISTENT_PEER_MAX_DIAL_PERIOD") != "" {
@@ -601,13 +601,13 @@ func ConfigFactory() (*Config, error) {
 				//
 				// TODO: Remove once p2p refactor is complete in favor of MaxConnections.
 				// ref: https://github.com/providenetwork/tendermint/issues/5670
-				// MaxNumInboundPeers int `mapstructure:"max-num-inbound-peers"`
+				MaxNumInboundPeers: p2pMaxConnections,
 
 				// Maximum number of outbound peers to connect to, excluding persistent peers.
 				//
 				// TODO: Remove once p2p refactor is complete in favor of MaxConnections.
 				// ref: https://github.com/providenetwork/tendermint/issues/5670
-				// MaxNumOutboundPeers int `mapstructure:"max-num-outbound-peers"`
+				MaxNumOutboundPeers: p2pMaxConnections,
 
 				// MaxConnections defines the maximum number of connected peers (inbound and
 				// outbound).
