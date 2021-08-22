@@ -505,7 +505,7 @@ func ConfigFactory() (*Config, error) {
 				CORSAllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"},
 
 				// A list of non simple headers the client is allowed to use with cross-domain requests.
-				CORSAllowedHeaders: []string{"X-Total-Results-Count"},
+				CORSAllowedHeaders: []string{"Accept", "Content-Type", "Origin", "X-Requested-With", "X-Server-Time", "X-Total-Results-Count"},
 
 				// Activate unsafe RPC commands like /dial-persistent-peers and /unsafe-flush-mempool
 				Unsafe: false,
