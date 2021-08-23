@@ -19,6 +19,14 @@ make build
 
 Using the Provide CLI, you can easily setup a secure vault to house your Baseledger keys. Baseledger currently supports Ed25519 keys for peer-to-peer authorization and validator keys.
 
+If you do not have a Provide user, first create one:
+
+```
+prvd users create
+```
+
+Next, authenticate using your Provide credentials and create a vault and Ed25519 key:
+
 ```
 prvd authenticate
 prvd vaults init --name 'Baseledger Vault'
