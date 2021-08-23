@@ -107,7 +107,7 @@ func (b Baseline) Commit() abcitypes.ResponseCommit {
 	b.CommitState.Height++
 	b.CommitState.Save() // TODO-- buffer this
 	return abcitypes.ResponseCommit{
-		RetainHeight: b.CommitState.Height,
+		RetainHeight: 0,
 	}
 }
 
