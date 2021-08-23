@@ -70,10 +70,12 @@ func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Ba
 }
 
 func (b *Baseline) ApplySnapshotChunk(req abcitypes.RequestApplySnapshotChunk) abcitypes.ResponseApplySnapshotChunk {
+	common.Log.Debugf("ApplySnapshotChunk; %s", req)
 	return abcitypes.ResponseApplySnapshotChunk{}
 }
 
 func (b *Baseline) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
+	common.Log.Debugf("BeginBlock; %v", req)
 	resp := abcitypes.ResponseBeginBlock{}
 
 	rawHeader, err := json.Marshal(req.Header)
@@ -110,11 +112,12 @@ func (b Baseline) Commit() abcitypes.ResponseCommit {
 }
 
 func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
+	common.Log.Debugf("DeliverTx; %s", req)
 	return abcitypes.ResponseDeliverTx{Code: 0}
 }
 
 func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	common.Log.Debugf("END BLOCK; %v", req)
+	common.Log.Debugf("EndBlock; %v", req)
 	return abcitypes.ResponseEndBlock{}
 }
 
@@ -166,22 +169,26 @@ func (b *Baseline) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseI
 }
 
 func (b *Baseline) ListSnapshots(req abcitypes.RequestListSnapshots) abcitypes.ResponseListSnapshots {
+	common.Log.Debugf("ListSnapshots; %s", req)
 	return abcitypes.ResponseListSnapshots{}
 }
 
 func (b *Baseline) LoadSnapshotChunk(req abcitypes.RequestLoadSnapshotChunk) abcitypes.ResponseLoadSnapshotChunk {
+	common.Log.Debugf("LoadSnapshotChunk; %s", req)
 	return abcitypes.ResponseLoadSnapshotChunk{}
 }
 
 func (b *Baseline) OfferSnapshot(req abcitypes.RequestOfferSnapshot) abcitypes.ResponseOfferSnapshot {
+	common.Log.Debugf("OfferSnapshot; %s", req)
 	return abcitypes.ResponseOfferSnapshot{}
 }
 
 func (b *Baseline) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
+	common.Log.Debugf("SetOption; %s", req)
 	return abcitypes.ResponseSetOption{}
 }
 
 func (b *Baseline) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
-	common.Log.Debugf("QUERY; %v", req)
+	common.Log.Debugf("Query; %v", req)
 	return abcitypes.ResponseQuery{Code: 0}
 }

@@ -19,12 +19,12 @@ const baseledgerModeFull = "full"
 const baseledgerModeSeed = "seed"
 const baseledgerModeValidator = "validator"
 
-const defaultABCIConnectionType = "socket"
+const defaultABCIConnectionType = "embedded"
 const defaultBlockTime = time.Second * 5
 const defaultConfigFilePath = "config.json"
 const defaultChainID = "peachtree"
 const defaultFastSync = true
-const defaultFastSyncVersion = "v2"
+const defaultFastSyncVersion = "v0"
 const defaultFilterPeers = false
 const defaultLogFormat = "plain"
 const defaultMode = "validator"
@@ -138,10 +138,10 @@ func ConfigFactory() (*Config, error) {
 		txIndexer = os.Getenv("BASELEDGER_TX_INDEXER")
 	}
 
-	// abciConnectionType := defaultABCIConnectionType
-	// if os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE") != "" {
-	// 	abciConnectionType = os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE")
-	// }
+	abciConnectionType := defaultABCIConnectionType
+	if os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE") != "" {
+		abciConnectionType = os.Getenv("BASELEDGER_ABCI_CONNECTION_TYPE")
+	}
 
 	filterPeers := defaultFilterPeers
 	if os.Getenv("BASELEDGER_FILTER_PEERS") != "" {
@@ -384,7 +384,7 @@ func ConfigFactory() (*Config, error) {
 				NodeKey: fmt.Sprintf("%s%snode.json", rootPath, string(os.PathSeparator)),
 
 				// Mechanism to connect to the ABCI application: socket | grpc
-				ABCI: "asdf",
+				ABCI: abciConnectionType,
 
 				// If true, query the ABCI app on connecting to a new peer
 				// so the app can decide if we should keep the connection or not
@@ -660,15 +660,14 @@ func ConfigFactory() (*Config, error) {
 			},
 
 			StateSync: &config.StateSyncConfig{
-				Enable: false,
-				// TempDir             string        `mapstructure:"temp_dir"`
-				// RPCServers          []string      `mapstructure:"rpc_servers"`
-				// TrustPeriod         time.Duration `mapstructure:"trust_period"`
-				// TrustHeight         int64         `mapstructure:"trust_height"`
-				// TrustHash           string        `mapstructure:"trust_hash"`
-				// DiscoveryTime       time.Duration `mapstructure:"discovery_time"`
-				// ChunkRequestTimeout time.Duration `mapstructure:"chunk_request_timeout"`
-				// ChunkFetchers       int32         `mapstructure:"chunk_fetchers"`
+				ChunkFetchers:       4,
+				ChunkRequestTimeout: 10 * time.Second,
+				DiscoveryTime:       15 * time.Second,
+				Enable:              false,
+				RPCServers:          []string{"http://genesis.peachtree.baseledger.provide.network:1337", "http://genesis.peachtree.baseledger.provide.network:1337"},
+				TrustHeight:         56600,                                                              //         int64         `mapstructure:"trust_height"`
+				TrustHash:           "96E7EF70AF368714CC99E339DB487549856869C8EE107325B6247FF802A4D016", //          string        `mapstructure:"trust_hash"`
+				TrustPeriod:         168 * time.Hour,
 			},
 
 			TxIndex: &config.TxIndexConfig{
