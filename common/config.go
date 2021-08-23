@@ -27,10 +27,9 @@ const defaultFastSync = true
 const defaultFastSyncVersion = "v2"
 const defaultFilterPeers = false
 const defaultLogFormat = "plain"
-const defaultMode = "validator"
+const defaultMode = "full"
 const defaultDBBackend = "goleveldb"
 const defaultGenesisFilePath = "genesis.json"
-const defaultGenesisURL = ""
 const defaultGenesisStateURL = "https://s3.amazonaws.com/static.provide.services/capabilities/baseledger-genesis-state.json"
 const defaultMempoolCacheSize = 256
 const defaultMempoolSize = 1024
@@ -45,6 +44,7 @@ const defaultPeerAlias = "prvd"
 const defaultRPCCORSOrigins = "*"
 const defaultRPCListenAddress = "tcp://0.0.0.0:1337"
 const defaultRPCMaxOpenConnections = 1024
+const defaultStakingNetwork = "ropsten"
 const defaultTxIndexer = "kv"
 
 // Config is the baseledger configuration
@@ -55,11 +55,13 @@ type Config struct {
 	GenesisURL      *url.URL `json:"genesis_url"`
 	GenesisStateURL *url.URL `json:"genesis_state_url"`
 
-	VaultID    *uuid.UUID `json:"vault_id"`
-	VaultKeyID *uuid.UUID `json:"vault_key_id"`
+	VaultID           *uuid.UUID `json:"vault_id"`
+	VaultKeyID        *uuid.UUID `json:"vault_key_id"`
+	VaultRefreshToken *string    `json:"-"`
 
-	VaultRefreshToken   *string `json:"-"`
-	ProvideRefreshToken *string `json:"-"`
+	ProvideRefreshToken    *string `json:"-"`
+	StakingContractAddress *string `json:"staking_contract_address"`
+	StakingNetwork         *string `json:"staking_network"`
 }
 
 func (c *Config) IsFullNode() bool {
@@ -106,6 +108,16 @@ func ConfigFactory() (*Config, error) {
 	networkName := defaultNetworkName
 	if os.Getenv("BASELEDGER_NETWORK_NAME") != "" {
 		networkName = os.Getenv("BASELEDGER_NETWORK_NAME")
+	}
+
+	var stakingContractAddress *string
+	if os.Getenv("BASELEDGER_STAKING_CONTRACT_ADDRESS") != "" {
+		stakingContractAddress = common.StringOrNil(os.Getenv("BASELEDGER_STAKING_CONTRACT_ADDRESS"))
+	}
+
+	stakingNetwork := defaultStakingNetwork
+	if os.Getenv("BASELEDGER_STAKING_NETWORK") != "" {
+		stakingNetwork = os.Getenv("BASELEDGER_STAKING_NETWORK")
 	}
 
 	logLevel := defaultLogLevel
@@ -369,7 +381,7 @@ func ConfigFactory() (*Config, error) {
 				DBBackend: dbBackend,
 
 				// Path to the JSON file containing the initial validator set and other meta data
-				Genesis: fmt.Sprintf("%s%sgenesis.json", rootPath, string(os.PathSeparator)),
+				Genesis: fmt.Sprintf("%s%s%s", rootPath, string(os.PathSeparator), defaultGenesisFilePath),
 
 				// Database directory
 				DBPath: fmt.Sprintf("%s%sdb", rootPath, string(os.PathSeparator)),
@@ -679,7 +691,9 @@ func ConfigFactory() (*Config, error) {
 		GenesisURL:      genesisURL,
 		GenesisStateURL: genesisStateURL,
 
-		ProvideRefreshToken: provideRefreshToken,
+		ProvideRefreshToken:    provideRefreshToken,
+		StakingContractAddress: stakingContractAddress,
+		StakingNetwork:         common.StringOrNil(stakingNetwork),
 
 		VaultID:           vaultID,
 		VaultKeyID:        vaultKeyID,
