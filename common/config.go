@@ -664,9 +664,9 @@ func ConfigFactory() (*Config, error) {
 				ChunkRequestTimeout: 10 * time.Second,
 				DiscoveryTime:       15 * time.Second,
 				Enable:              false,
-				RPCServers:          []string{"http://genesis.peachtree.baseledger.provide.network:1337", "http://genesis.peachtree.baseledger.provide.network:1337"},
-				TrustHeight:         56600,                                                              //         int64         `mapstructure:"trust_height"`
-				TrustHash:           "96E7EF70AF368714CC99E339DB487549856869C8EE107325B6247FF802A4D016", //          string        `mapstructure:"trust_hash"`
+				RPCServers:          []string{},
+				TrustHeight:         0,  //         int64         `mapstructure:"trust_height"`
+				TrustHash:           "", //          string        `mapstructure:"trust_hash"`
 				TrustPeriod:         168 * time.Hour,
 			},
 
