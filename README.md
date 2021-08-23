@@ -57,7 +57,7 @@ Note the refresh token, vault id and vault key id. Each of these values will be 
 You can use the following command to run a full node on the Baseledger "peachtree" testnet:
 
 ```
-VAULT_REFRESH_TOKEN=<your refresh token>
+VAULT_REFRESH_TOKEN=<your refresh token> \
 VAULT_ID=<vault id> \
 VAULT_KEY_ID=<vault key id> \
 BASELEDGER_MODE=full \
