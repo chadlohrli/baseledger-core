@@ -23,7 +23,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/providenetwork/tendermint v0.34.11-0.20210817071358-d1046c6c13ba
-	github.com/provideplatform/provide-go v0.0.0-20210804232208-ced52410c4b0
+	github.com/provideplatform/provide-go v0.0.0-20210823190919-440948fc25cf
 	github.com/rs/cors v1.8.0 // indirect
 	google.golang.org/grpc v1.39.1 // indirect
 )

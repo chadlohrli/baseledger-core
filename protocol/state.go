@@ -23,6 +23,7 @@ type State struct {
 	Name       string             `json:"name"`
 	Height     int64              `json:"height"`
 	Root       []byte             `json:"root"`
+	Staking    *StakingParams     `json:"staking"`
 	Validators []*types.Validator `json:"validators"`
 }
 
@@ -65,11 +66,20 @@ func stateFactory(cfg *common.Config, name string, genesis *types.GenesisDoc) (*
 		return state, nil
 	}
 
+	var stateParams *StateParams
+	var staking *StakingParams
+	err := json.Unmarshal(genesis.AppState, &stateParams)
+	if err == nil {
+		common.Log.Debug("unmarshaled genesis state to state params")
+		staking = stateParams.Staking
+	}
+
 	return &State{
 		path:       path,
 		Name:       name,
 		Height:     0,
 		Root:       []byte{},
+		Staking:    staking,
 		Validators: make([]*types.Validator, 0),
 	}, nil
 }

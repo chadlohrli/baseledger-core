@@ -36,7 +36,7 @@ type Baseline struct {
 }
 
 func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Baseline, error) {
-	service, err := serviceFactory(cfg)
+	service, err := serviceFactory(cfg, genesis)
 	if err != nil {
 		return nil, err
 	}

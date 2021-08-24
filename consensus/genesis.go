@@ -78,9 +78,9 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 		genesisTime = time.Now()
 	}
 
-	var genesisState json.RawMessage
+	var genesisStateJSON json.RawMessage
 	if cfg.GenesisStateURL != nil {
-		genesisState, err = fetchGenesisState(cfg)
+		genesisStateJSON, err = fetchGenesisState(cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,7 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 
 	return &types.GenesisDoc{
 		// AppHash         tmbytes.HexBytes         `json:"app_hash"`
-		AppState: genesisState,
+		AppState: genesisStateJSON,
 		ChainID:  cfg.ChainID,
 		ConsensusParams: &tmproto.ConsensusParams{
 			Block: tmproto.BlockParams{
@@ -112,7 +112,6 @@ func GenesisDocFactory(cfg *common.Config) (*types.GenesisDoc, error) {
 		},
 		GenesisTime:   genesisTime,
 		InitialHeight: int64(1),
-		// Validators:    genesisValidatorsFactory(cfg),
 	}, nil
 }
 

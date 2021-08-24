@@ -6,6 +6,11 @@ const transactionStatusCodeInvalidEmpty = uint32(1)
 // Transaction is a generic transaction type
 type Transaction struct {
 	raw []byte
+
+	// TODO: review typing
+	// TxID    string
+	// Payload []byte
+	// Opcode  int64
 }
 
 // TransactionFromRaw initializes a new Transaction given its wire representation
@@ -16,7 +21,7 @@ func TransactionFromRaw(tx []byte) (*Transaction, error) {
 }
 
 func (tx *Transaction) calculateGas() int64 {
-	// TODO
+	// TODO-- map tx.Opcode
 	return int64(0)
 }
 
