@@ -192,3 +192,13 @@ func (b *Baseline) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	common.Log.Debugf("Query; %v", req)
 	return abcitypes.ResponseQuery{Code: 0}
 }
+
+// Shutdown handles the consolidated shutdown of all ABCI-owned resources
+func (b *Baseline) Shutdown() error {
+	err := b.Service.unsubscribeStakingSubscription()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

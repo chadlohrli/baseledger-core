@@ -15,9 +15,11 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kthomas/go-db-config v0.0.0-20200612131637-ec0436a9685e
 	github.com/kthomas/go-logger v0.0.0-20210526080020-a63672d0724c
+	github.com/kthomas/go-natsutil v0.0.0-20200602073459-388e1f070b05
 	github.com/kthomas/go.uuid v1.2.1-0.20190324131420-28d1fa77e9a4
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
+	github.com/nats-io/nats.go v1.11.0
 	github.com/onsi/ginkgo v1.16.1 // indirect
 	github.com/onsi/gomega v1.11.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect

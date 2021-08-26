@@ -2,6 +2,10 @@ package protocol
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/kthomas/go-natsutil"
+	"github.com/nats-io/nats.go"
 
 	"github.com/providenetwork/baseledger/common"
 	"github.com/providenetwork/tendermint/types"
@@ -19,6 +23,8 @@ type Service struct {
 	nchain   *nchain.Service
 	privacy  *privacy.Service
 	vault    *vault.Service
+
+	stakingContractSubscription *nats.Subscription
 }
 
 func authorizeAccessToken(refreshToken string) (*ident.Token, error) {
@@ -65,8 +71,17 @@ func serviceFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Service, er
 	return srvc, nil
 }
 
-func (s *Service) initStaking(token string, cfg *common.Config, params *StateParams) error {
+// Shutdown handles the graceful shutdown of all service resources
+func (s *Service) Shutdown() error {
+	err := s.unsubscribeStakingSubscription()
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (s *Service) initStaking(token string, cfg *common.Config, params *StateParams) error {
 	stakingContractConfigured := cfg.StakingContractAddress != nil && cfg.StakingNetwork != nil
 	if !stakingContractConfigured && params != nil && params.Staking != nil && params.Staking.Contract != nil && cfg.StakingNetwork != nil {
 		stakingNetworkParams, err := params.Staking.Network.GetParams(*cfg.StakingNetwork)
@@ -77,7 +92,7 @@ func (s *Service) initStaking(token string, cfg *common.Config, params *StatePar
 	}
 
 	if stakingContractConfigured {
-		_, err := s.requireStakingContract(
+		contract, err := s.requireStakingContract(
 			token,
 			*cfg.StakingNetwork,
 			params.Staking,
@@ -87,7 +102,9 @@ func (s *Service) initStaking(token string, cfg *common.Config, params *StatePar
 			return err
 		}
 
-		err = s.startStakingSubscriptions(token, *cfg.StakingContractAddress)
+		// assert(*cfg.StakingContractAddress == *contract.Address)
+
+		s.stakingContractSubscription, err = s.startStakingSubscriptions(token, contract)
 		if err != nil {
 			common.Log.Warningf("failed to subscribe to configured staking contract address: %s; %s", *cfg.StakingContractAddress, err.Error())
 			return err
@@ -116,9 +133,9 @@ func (s *Service) requireStakingContract(token, networkName string, params *Stak
 	contract, err = nchain.GetContractDetails(token, *network.Address, map[string]interface{}{})
 	if err != nil {
 		contract, err = nchain.CreatePublicContract(token, map[string]interface{}{
-			"network_id": networkID,
-			"name":       params.Contract.Name,
 			"address":    *network.Address,
+			"name":       params.Contract.Name,
+			"network_id": networkID,
 			"params": map[string]interface{}{
 				"compiled_artifact": params.Contract,
 				"argv":              network.Argv,
@@ -133,14 +150,104 @@ func (s *Service) requireStakingContract(token, networkName string, params *Stak
 	return contract, nil
 }
 
-func (s *Service) startStakingSubscriptions(token, contractAddress string) error {
-	tkn, err := nchain.VendContractSubscriptionToken(token, contractAddress, map[string]interface{}{})
+// unsubscribeStakingSubscription gracefully shuts down and removes any active
+// subscription to events emitted by the configured staking contract
+func (s *Service) unsubscribeStakingSubscription() error {
+	if s.stakingContractSubscription != nil {
+		err := s.stakingContractSubscription.Unsubscribe()
+		if err != nil {
+			common.Log.Warningf("failed to unsubscribe from staking contract")
+			return err
+		}
+	}
+
+	return nil
+}
+
+// vendContractSubscriptionBearerToken users the nchain api to vend a VC authorizing access
+// to a dedicated subject where events will be delivere
+func (s *Service) vendContractSubscriptionBearerToken(token string, contract *nchain.Contract) (*string, error) {
+	if contract.Address == nil {
+		return nil, fmt.Errorf("failed to vend contract subscription bearer token; nil contract address")
+	}
+
+	tkn, err := nchain.VendContractSubscriptionToken(token, *contract.Address, map[string]interface{}{})
 	if err != nil {
-		common.Log.Errorf("failed to subscribe to staking contract events; contract address: %s; %s", contractAddress, err.Error())
-		return err
+		common.Log.Errorf("failed to vend contract subscription bearer token; contract address: %s; %s", *contract.Address, err.Error())
+		return nil, err
 	}
 
 	common.Log.Debugf("vended contract subscription token: %s", tkn.Token)
+	return tkn.Token, nil
+}
 
-	return nil
+func (s *Service) startStakingSubscriptions(token string, contract *nchain.Contract) (*nats.Subscription, error) {
+	if contract.Address == nil {
+		return nil, fmt.Errorf("failed to subscribe to staking contract events; nil contract address")
+	}
+
+	_, err := s.vendContractSubscriptionBearerToken(token, contract)
+	if err != nil {
+		common.Log.Debugf("FIXME-- nchain token vending machine api is currently issuing a 500; please add integration test")
+	}
+
+	conn, _ := natsutil.GetSharedNatsConnection(&token)
+	subject := fmt.Sprintf("network.%s.contracts.%s", contract.NetworkID, *contract.Address)
+	subscription, err := conn.Subscribe(subject, func(msg *nats.Msg) {
+		common.Log.Debugf("consuming %d-byte NATS contract event on subject: %s", len(msg.Data), msg.Subject)
+
+		// TODO: unmarshal to StakingContractEvent to handle the following staking contract events:
+
+		// Deposit/stake
+		//
+		// Become a depositor in the configured staking contract or increase an existing position.
+		//
+		// sig: Deposit (address addr, address beneficiary, bytes32 validator, uint256 amount)
+		// raw: 0x000000000000000000000000bee25e36774dc2baeb14342f1e821d5f765e2739000000000000000000000000bee25e36774dc2baeb14342f1e821d5f765e2739eacbbc154c8373d7cb9134ed2a2fa2a4bdaf8bfef27b91299b8dce4042bd00000000000000000000000000000000000000000000000000000000000005f5e100
+		//
+		// This event is emitted from EVM/mainnet when a validator deposit succeeds, either by way of
+		// governance approval or, in primitive/testnet setups, simply calling the external deposit()
+		// method on the staking contract.
+		//
+		// A governance contract architecture is being developed which will, among other things,
+		// make the staking contract upgradable by way of the governance council.
+		//
+		// Staking contract source: https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L42
+		// Example transaction on Ropsten: https://ropsten.etherscan.io/tx/0xbe4f32e51074830622d2fe553c59fb08611faa7bfdb37667e1a67f5374a6df14
+
+		// Withdraw
+		//
+		// Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
+		// configured staking contract. If this transaction affects the withdrawal of 100% of the
+		// amount on deposit, the validator will cease to participate in block rewards effective
+		// after some number of block confirmations. The number of confirmations required prior to
+		// the Baseledger network recognizing any associated updates to the validator set is
+		// determined based on which EVM-based network is hosting the staking and token contracts:
+		//
+		// Network			Block Confirmations
+		// -------			-------------------
+		// mainnet			[30]
+		// ropsten			[3]
+		//
+		// sig: Withdraw (address addr, bytes32 validator, uint256 amount)
+		// raw: 0x000000000000000000000000bee25e36774dc2baeb14342f1e821d5f765e2739eacbbc154c8373d7cb9134ed2a2fa2a4bdaf8bfef27b91299b8dce4042bd00000000000000000000000000000000000000000000000000000000000000000929
+		//
+		// This event is emitted from EVM/mainnet when a validator withdrawal succeeds, either by way of
+		// governance approval or, in primitive/testnet setups, simply calling the external withdraw()
+		// method on the staking contract.
+		//
+		// A governance contract architecture is being developed which will, among other things,
+		// make the staking contract upgradable by way of the governance council.
+		//
+		// Staking contract source: https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61
+		// Example transaction on Ropsten: https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412
+
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	common.Log.Debugf("established NATS subscription on subject: %s", subscription.Subject)
+	return subscription, nil
 }

@@ -73,6 +73,7 @@ func (t *Tendermint) Stop() {
 		}
 	}()
 
+	t.baseline.Shutdown()
 	t.service.Stop()
 }
 
