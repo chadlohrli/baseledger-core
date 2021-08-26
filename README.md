@@ -114,12 +114,12 @@ Baseledger network recognizing any associated updates (e.g., changes to the vali
 determined based on which EVM-based network is hosting the staking and token contracts:
 
 Network			Block Confirmations
--------			-------------------
-mainnet			30
-ropsten			3
-rinkeby			_not supported at this time_
-kovan			_not supported at this time_
-goerli			_not supported at this time_
+| -------	| 	------------------- |
+| mainnet	| 	30 |
+| ropsten	| 	3 |
+| rinkeby	| 	_not supported at this time_ |
+| kovan		| 	_not supported at this time_ |
+| goerli	| 	_not supported at this time_ |
 
 ### Governance Contract
 
