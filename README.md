@@ -6,7 +6,7 @@ _Baseledger core consensus client for running a validator, full or seed node._
 
 This package depends on a modified version of Tendermint v0.34.11 which requires a Vault for storing private key material. We also bundle the Baseledger ABCI within a single binary for ease-of-use and and cross-platform portability.
 
-## Prerequisites
+## Prerequisites & System Requirements
 
 - golang (1.16 recommended)
 
@@ -71,8 +71,6 @@ BASELEDGER_PEER_ALIAS=<your alias> \
 ./.bin/node
 ```
 
-Additional documentation forthcoming.
-
 ## Running a Validator Node
 
 Running a validator node requires the user to be a depositor on the configured staking contract.
@@ -93,19 +91,19 @@ BASELEDGER_PEER_ALIAS=<your alias> \
 ./.bin/node
 ```
 
-### Governance
+## Governance
 
 A governance contract architecture is being developed which will, among other things,
 make the staking and other future contracts upgradable by way of the governance council.
 
-#### Ethereum Bridge
+### Ethereum Bridge
 
 We have taken a minimalistic approach to the Baseledger node implementation using tendermint.
 A critical part of the architecture is maintaining a highly fault-tolerant bridge between a
 configured Ethereum network (e.g., mainnet, ropsten, kovan, etc.) and the Baseledger network
 (e.g., mainnet or peachtree etc).
 
-##### Latency
+#### Latency
 
 Just as crypto exchanges await a number of block confirmations before making deposited assets
 available for use, there are a number of block confirmations which must occur on the EVM-based
@@ -126,12 +124,11 @@ determined based on which EVM-based network is hosting the staking and token con
 | kovan | _not supported at this time_ |
 | goerli | _not supported at this time_ |
 
-### Staking Contract
+## Staking Contract
 
-A staking contract, configured with the UBT token contract address, is deployed on the following
-Ethereum networks:
+A [staking contract](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol), initialized with a reference to the UBT token contract address, is deployed on the following Ethereum networks:
 
-| Network | Token Symbol | Token Contract Address | Staking Contract Address |
+| Network | Symbol | Token Contract Address | Staking Contract Address |
 |--|--|--|--|
 | mainnet | UBT | `0x8400D94A5cb0fa0D041a3788e395285d61c9ee5e` | -- |
 | ropsten | UBTR | `0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c` | `0xFD02dAA2BAd85D38C8a4ad6B61afbA0ff92b30F4` |
@@ -139,37 +136,41 @@ Ethereum networks:
 | kovan | -- | -- | -- |
 | goerli | -- | -- | -- |
 
-#### Proxy Staking
+### Proxy Staking
 
-A proxy staking mechanism is being developed for addition to the staking contract (see relevant source code [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L17)). Validators will be able to compete for the best proxy staking offerings and implementations.
+An abstract proxy staking mechanism is being developed to add composable delegation functionality to the staking contract (see relevant placeholder in the source code [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L17)). Validators will be able to create competitive proxy staking offerings and implementations.
 
-#### Methods
+💡 _This is a great idea for a hackathon project at the upcoming [EthAtlanta](https://ethatl.com) hackathon, happening October 1-3._
+
+### Methods
 
 The core functionality of the staking contract is to enable deposits and withdrawals of UBT on the Ethereum mainnet,
 or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c), on the Ropsten testnet).
 
-##### `Deposit (address addr, address beneficiary, bytes32 validator, uint256 amount)`
+#### `Deposit (address addr, address beneficiary, bytes32 validator, uint256 amount)`
 
-Become a depositor xin the configured staking contract or increase an existing position.
+    Become a depositor to the configured staking contract or increase an existing position.
 
-This method emits events from the EVM/mainnet when a validator deposit succeeds, either by
-way of governance approval or, in primitive/testnet setups, implicit approval.
+    This method emits events from the EVM/mainnet when a validator deposit succeeds, either by
+    way of governance approval or, in primitive/testnet setups, implicit approval.
 
-Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L42).
-Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xbe4f32e51074830622d2fe553c59fb08611faa7bfdb37667e1a67f5374a6df14).
+    Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L42).
+    Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xbe4f32e51074830622d2fe553c59fb08611faa7bfdb37667e1a67f5374a6df14).
 
-##### `Withdraw (address addr, bytes32 validator, uint256 amount)`
+---
 
-Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
-configured staking contract.
+#### `Withdraw (address addr, bytes32 validator, uint256 amount)`
 
-This method emits events from the EVM/mainnet when a validator withdrawal succeeds, either by
-way of governance approval or, in primitive/testnet setups, implicit approval.
-method on the staking contract.
+    Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
+    configured staking contract.
 
-Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61).
-Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412).
+    This method emits events from the EVM/mainnet when a validator withdrawal succeeds, either by
+    way of governance approval or, in primitive/testnet setups, implicit approval.
+    method on the staking contract.
 
---
+    Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61).
+    Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412).
+
+---
 
 _Additional documentation forthcoming._
