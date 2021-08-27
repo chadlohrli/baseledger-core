@@ -192,7 +192,7 @@ MethodID: 0x095ea7b3
 [1]:  000000000000000000000000000000000000000000000000000016bcc41e9000
 ```
 
-Call the `deposit()` method. The following example contract call to the staking contract on the "peachtree" testnet ((`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`)) results in 25,000 UBTR transferred and placed on deposit for benefit of sender.
+Call the `deposit()` method. The following example contract call to the staking contract on the "peachtree" testnet (`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`) results in 25,000 UBTR transferred and placed on deposit for benefit of sender.
 
 ```
 Function: deposit(address beneficiary, bytes32 validator, uint256 amount) ***
@@ -212,7 +212,7 @@ Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/
 #### `withdraw(uint256 amount) external` 
 
 Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
-configured staking contract; the following example contract call to the staking contract on the "peachtree: testnet ((`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`)) results in 10,000 UBTR being withdrawn from our depositor account on the staking contract and returned.
+configured staking contract; the following example contract call to the staking contract on the "peachtree: testnet (`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`) results in 10,000 UBTR being withdrawn from our depositor account on the staking contract and returned.
 
 ```
 Function: withdraw(uint256 value) ***
