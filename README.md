@@ -136,41 +136,36 @@ A [staking contract](https://github.com/Baseledger/baseledger-contracts/blob/mas
 | kovan | -- | -- | -- |
 | goerli | -- | -- | -- |
 
+### Methods
+
+The core purpose of the staking contract is to enable deposits and withdrawals of UBT on the Ethereum mainnet,
+or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c), on the Ropsten testnet).
+
+#### `deposit(address beneficiary, bytes32 validator, uint256 amount) external`
+
+Become a depositor to the configured staking contract or increase an existing position.
+
+This method emits a `Deposit(address addr, address beneficiary, bytes32 validator, uint256 amount)` event from the EVM/mainnet contract when a validator deposit succeeds, either by
+way of governance approval or, in primitive/testnet setups, implicit approval.
+
+Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L42).
+Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xbe4f32e51074830622d2fe553c59fb08611faa7bfdb37667e1a67f5374a6df14).
+
+#### `withdraw(uint256 amount) external` 
+
+Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
+configured staking contract.
+
+This method emits a `Withdraw(address addr, bytes32 validator, uint256 amount)` event from the EVM/mainnet contract when a validator withdrawal succeeds, either by
+way of governance approval or, in primitive/testnet setups, implicit approval.
+
+Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61).
+Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412).
+
 ### Proxy Staking
 
 An abstract proxy staking mechanism is being developed to add composable delegation functionality to the staking contract (see relevant placeholder in the source code [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L17)). Validators will be able to create competitive proxy staking offerings and implementations.
 
 💡 _This is a great idea for a hackathon project at the upcoming [EthAtlanta](https://ethatl.com) hackathon, happening October 1-3._
-
-### Methods
-
-The core functionality of the staking contract is to enable deposits and withdrawals of UBT on the Ethereum mainnet,
-or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c), on the Ropsten testnet).
-
-#### `Deposit (address addr, address beneficiary, bytes32 validator, uint256 amount)`
-
-    Become a depositor to the configured staking contract or increase an existing position.
-
-    This method emits events from the EVM/mainnet when a validator deposit succeeds, either by
-    way of governance approval or, in primitive/testnet setups, implicit approval.
-
-    Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L42).
-    Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xbe4f32e51074830622d2fe553c59fb08611faa7bfdb37667e1a67f5374a6df14).
-
----
-
-#### `Withdraw (address addr, bytes32 validator, uint256 amount)`
-
-    Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
-    configured staking contract.
-
-    This method emits events from the EVM/mainnet when a validator withdrawal succeeds, either by
-    way of governance approval or, in primitive/testnet setups, implicit approval.
-    method on the staking contract.
-
-    Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61).
-    Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412).
-
----
 
 _Additional documentation forthcoming._
