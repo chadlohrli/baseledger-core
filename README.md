@@ -2,13 +2,43 @@
 
 _Baseledger core consensus client for running a validator, full or seed node._
 
-⚠️ WARNING: this code is not ready for production. The Baseledger mainnet is currently scheduled to launch in Q1 2022. Use the "peachtree" testnet.
+⚠️ WARNING: this code has not been audited and is not ready for use in production. The Baseledger mainnet is scheduled to launch in Q1 2022.
 
-This package depends on a modified version of Tendermint v0.34.11 which requires a Vault for storing private key material. We also bundle the Baseledger ABCI within a single binary for ease-of-use and and cross-platform portability.
+This package depends on a modified version of Tendermint v0.34.11 which requires a Vault for storing private key material. We also compile the Baseledger Application Blockchain Interface ([ABCI](https://docs.tendermint.com/master/spec/abci)) and [tendermint core](https://docs.tendermint.com) dependencies together within a single binary for ease-of-use, cross-platform portability and optimal performance.
 
-## Prerequisites & System Requirements
+## Quickstart
 
-- golang (1.16 recommended)
+1. Install golang
+2. Build the project from source
+3. Create a Vault and Ed25519 keypair using the `prvd` CLI
+4. Run a full or validator node
+5. (Optional) Deposit UBT in the appropriate staking contract
+
+## Roadmap
+
+[Baseledger](https://baseledger.net) was created by [Unibright](https://unibright.io) and [Provide](https://provide.network) and is under active development.
+
+### Testnets
+
+In the spirit of developing a proof of concept implementation to experiment with network validation in tendermint (including staking and delegation), native opcodes and a community block explorer, the Unibright team built the ["lakewood" testnet](https://github.com/baseledger/lakewood). This testnet was created using Cosmos SDK.
+
+The ["peachtree" testnet](https://explorer.peachtree.baseledger.net) was created from scratch using tendermint for BFT consensus and the [Provide stack](https://docs.provide.services) for subscribing to events emitted by the Baseledger governance and staking contracts, broadcasting _baseline proofs_ to the network and otherwise interacting with the [Baseline Protocol](https://github.com/eea-oasis/baseline). As a result of this design, `baseledger-core` can be built as a single container and added to existing deployments of the Provide stack for increased security. `baseledger-core` can also run standalone (i.e., outside the context of a Provide stack). Baseledger nodes running outside the context of a Provide stack are not restricted from operating as validator, full or seed nodes. Organizations implementing the _baseline_ pattern in commercial multiparty workflows benefit from running a local Baseledger node because it provides additional security to the cryptographic commitments (proofs) stored within the Provide stack without sacrificing any privacy guarantees inherent to _baselining_.
+
+### Mainnet
+
+The Baseledger mainnet is currently scheduled to launch in Q1 2022. More information will be made available in Q4 2021 about the governance council and how you can apply to become a validator on the mainnet to earn block rewards in UBT.
+
+## Prerequisites
+
+- golang (1.16 recommended); only required when building from source
+
+### Hardware Requirements
+
+The following are the minimum hardware requirements recommended for running a Baseledger validator or null node:
+
+- 2+ CPU cores
+- 4GB RAM minimum
+- SSD; recommended minimum free disk space >= 10GB as of September 2021
 
 ## Build
 
@@ -19,15 +49,15 @@ make build
 
 ## Creating a Vault
 
-Using the Provide CLI, you can easily setup a secure vault to house your Baseledger keys. Baseledger currently supports Ed25519 keys for peer-to-peer authorization and validator keys.
+Using the [Provide CLI](https://github.com/provideplatform/provide-cli), you can easily setup a secure vault instance to secure your Baseledger keys. Baseledger currently supports Ed25519 keys for peer-to-peer authorization and validator keys.
 
-If you do not have a Provide user, first create one:
+If you have not previously created a Provide user, first create one:
 
 ```
 prvd users create
 ```
 
-Next, authenticate using your Provide credentials and create a vault and Ed25519 key:
+Next, authenticate using those credentials and create a vault and Ed25519 key:
 
 ```
 prvd authenticate
@@ -135,6 +165,10 @@ A [staking contract](https://github.com/Baseledger/baseledger-contracts/blob/mas
 | rinkeby | -- | -- | -- |
 | kovan | -- | -- | -- |
 | goerli | -- | -- | -- |
+
+### Faucet
+
+A faucet is being added to [Provide Payments](https://docs.provide.services/payments) to make it easy to request UBT on supported testnets via the CLI.
 
 ### Methods
 
