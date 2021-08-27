@@ -161,7 +161,7 @@ A [staking contract](https://github.com/Baseledger/baseledger-contracts/blob/mas
 | Network | Symbol | Token Contract Address | Staking Contract Address |
 |--|--|--|--|
 | mainnet | UBT | `0x8400D94A5cb0fa0D041a3788e395285d61c9ee5e` | -- |
-| ropsten | UBTR | `0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c` | `0xFD02dAA2BAd85D38C8a4ad6B61afbA0ff92b30F4` |
+| ropsten | UBTR | `0xa9a466b8f415bcc5883934eda70016f8b23ea776` | `0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF` |
 | rinkeby | -- | -- | -- |
 | kovan | -- | -- | -- |
 | goerli | -- | -- | -- |
@@ -173,22 +173,53 @@ A faucet is being added to [Provide Payments](https://docs.provide.services/paym
 ### Methods
 
 The core purpose of the staking contract is to enable deposits and withdrawals of UBT on the Ethereum mainnet,
-or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c), on the Ropsten testnet).
+or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xa9a466b8f415bcc5883934eda70016f8b23ea776), on the Ropsten testnet).
 
 #### `deposit(address beneficiary, bytes32 validator, uint256 amount) external`
 
 Become a depositor to the configured staking contract or increase an existing position.
 
+Prior to making your first deposit into the staking contract from any address, or if a subsequent amount you wish to deposit exceeds the value of the remaining approved tokens,
+you must call `approve(address spender, uint25¸amount)` on the token contract to allow it to transfer UBT on your behalf when you call `deposit()`.
+
+The following example contract call to the UBTR token contract (`0xa9a466b8f415bcc5883934eda70016f8b23ea776`) approves the staking contract (`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`), enabling you to deposit up to 250,000 UBTR:
+
+```
+Function: approve(address spender, uint256 amount)
+
+MethodID: 0x095ea7b3
+[0]:  0000000000000000000000000b5fc75192f8ee3b4795ab44b3b455ab3d97a6df
+[1]:  000000000000000000000000000000000000000000000000000016bcc41e9000
+```
+
+Call the `deposit()` method. The following example contract call to the staking contract on the "peachtree" testnet ((`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`)) results in 25,000 UBTR transferred and placed on deposit for benefit of sender.
+
+```
+Function: deposit(address beneficiary, bytes32 validator, uint256 amount) ***
+
+MethodID: 0xeb2243f8
+[0]:  000000000000000000000000bee25e36774dc2baeb14342f1e821d5f765e2739
+[1]:  eacbbc154c8373d7cb9134ed2a2fa2a4bdaf8bfef27b91299b8dce4042bd0000
+[2]:  00000000000000000000000000000000000000000000000000000246139ca800
+```
+
 This method emits a `Deposit(address addr, address beneficiary, bytes32 validator, uint256 amount)` event from the EVM/mainnet contract when a validator deposit succeeds, either by
 way of governance approval or, in primitive/testnet setups, implicit approval.
 
 Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L42).
-Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xbe4f32e51074830622d2fe553c59fb08611faa7bfdb37667e1a67f5374a6df14).
+Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0x6f222afc6ee868f09c2738a13ef4508ba1022fd5f2f3d06c4dc63e5901fd4997).
 
 #### `withdraw(uint256 amount) external` 
 
 Initiate the withdrawal of a portion, or all, of a previously deposited stake from the
-configured staking contract.
+configured staking contract; the following example contract call to the staking contract on the "peachtree: testnet ((`0x0B5FC75192F8EE3B4795AB44b3B455aB3d97A6dF`)) results in 10,000 UBTR being withdrawn from our depositor account on the staking contract and returned.
+
+```
+Function: withdraw(uint256 value) ***
+
+MethodID: 0x2e1a7d4d
+[0]:  000000000000000000000000000000000000000000000000000000e8d4a51000
+```
 
 This method emits a `Withdraw(address addr, bytes32 validator, uint256 amount)` event from the EVM/mainnet contract when a validator withdrawal succeeds, either by
 way of governance approval or, in primitive/testnet setups, implicit approval.
