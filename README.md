@@ -93,6 +93,11 @@ BASELEDGER_PEER_ALIAS=<your alias> \
 ./.bin/node
 ```
 
+### Governance
+
+A governance contract architecture is being developed which will, among other things,
+make the staking and other future contracts upgradable by way of the governance council.
+
 #### Ethereum Bridge
 
 We have taken a minimalistic approach to the Baseledger node implementation using tendermint.
@@ -113,31 +118,39 @@ after the number of block confirmations. The number of L1 confirmations required
 Baseledger network recognizing any associated updates (e.g., changes to the validator set) is
 determined based on which EVM-based network is hosting the staking and token contracts:
 
-Network			Block Confirmations
-| -------	| 	------------------- |
-| mainnet	| 	30 |
-| ropsten	| 	3 |
-| rinkeby	| 	_not supported at this time_ |
-| kovan		| 	_not supported at this time_ |
-| goerli	| 	_not supported at this time_ |
-
-### Governance Contract
-
-A governance contract architecture is being developed which will, among other things,
-make the staking and other future contracts upgradable by way of the governance council.
+| Network | Block Confirmations |
+|--|--|
+| mainnet | 30 |
+| ropsten | 3 |
+| rinkeby | _not supported at this time_ |
+| kovan | _not supported at this time_ |
+| goerli | _not supported at this time_ |
 
 ### Staking Contract
 
-A staking contract, configured with the UBT token contract address, is deployed
+A staking contract, configured with the UBT token contract address, is deployed on the following
+Ethereum networks:
+
+| Network | Token Symbol | Token Contract Address | Staking Contract Address |
+|--|--|--|--|
+| mainnet | UBT | `0x8400D94A5cb0fa0D041a3788e395285d61c9ee5e` | -- |
+| ropsten | UBTR | `0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c` | `0xFD02dAA2BAd85D38C8a4ad6B61afbA0ff92b30F4` |
+| rinkeby | -- | -- | -- |
+| kovan | -- | -- | -- |
+| goerli | -- | -- | -- |
+
+#### Proxy Staking
+
+A proxy staking mechanism is being developed for addition to the staking contract (see relevant source code [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L17)). Validators will be able to compete for the best proxy staking offerings and implementations.
 
 #### Methods
 
 The core functionality of the staking contract is to enable deposits and withdrawals of UBT on the Ethereum mainnet,
-or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xe6c2c4225cc6be5894dd38db799486afa36ece69), on the Ropsten testnet).
+or "test UBT" (such as [UBTR](https://ropsten.etherscan.io/token/0xa9ec5862d3D25caF1eCae6e9d48aDacD8CE5899c), on the Ropsten testnet).
 
 ##### `Deposit (address addr, address beneficiary, bytes32 validator, uint256 amount)`
 
-Become a depositor in the configured staking contract or increase an existing position.
+Become a depositor xin the configured staking contract or increase an existing position.
 
 This method emits events from the EVM/mainnet when a validator deposit succeeds, either by
 way of governance approval or, in primitive/testnet setups, implicit approval.
