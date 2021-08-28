@@ -20,7 +20,7 @@ This package depends on a modified version of Tendermint v0.34.11 which requires
 
 ### Testnets
 
-In the spirit of developing a proof of concept implementation to experiment with network validation in tendermint (including staking and delegation), native opcodes and a community block explorer, the Unibright team built the ["lakewood" testnet](https://github.com/baseledger/lakewood). This testnet was created using Cosmos SDK.
+In the spirit of developing a proof of concept implementation to experiment with network validation in tendermint (including staking and delegation), native opcodes and a community block explorer, the team built the ["lakewood" testnet](https://github.com/baseledger/lakewood). This testnet was created using Cosmos SDK.
 
 The ["peachtree" testnet](https://explorer.peachtree.baseledger.net) was created from scratch using tendermint for BFT consensus and the [Provide stack](https://docs.provide.services) for subscribing to events emitted by the Baseledger governance and staking contracts, broadcasting _baseline proofs_ to the network and otherwise interacting with the [Baseline Protocol](https://github.com/eea-oasis/baseline). As a result of this design, `baseledger-core` can be built as a single container and added to existing deployments of the Provide stack for increased security. `baseledger-core` can also run standalone (i.e., outside the context of a Provide stack). Baseledger nodes running outside the context of a Provide stack are not restricted from operating as validator, full or seed nodes. Organizations implementing the _baseline_ pattern in commercial multiparty workflows benefit from running a local Baseledger node because it provides additional security to the cryptographic commitments (proofs) stored within the Provide stack without sacrificing any privacy guarantees inherent to _baselining_.
 
@@ -225,7 +225,7 @@ This method emits a `Withdraw(address addr, bytes32 validator, uint256 amount)` 
 way of governance approval or, in primitive/testnet setups, implicit approval.
 
 Staking contract source can be found [here](https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61).
-Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412).
+Example transaction on Ropsten can be found [here](https://ropsten.etherscan.io/tx/0x3fb753d45038b38c1cb503fdfa06942c24958e8601a9356983cc0a6968096b99).
 
 ### Proxy Staking
 
