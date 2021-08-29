@@ -1,13 +1,12 @@
 package protocol
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/providenetwork/baseledger/common"
 	abcitypes "github.com/providenetwork/tendermint/abci/types"
-	"github.com/providenetwork/tendermint/proto/tendermint/crypto"
 	"github.com/providenetwork/tendermint/types"
 )
 
@@ -33,6 +32,8 @@ type Baseline struct {
 	CheckTxState   *State
 	DeliverTxState *State
 	CommitState    *State
+
+	mutex *sync.Mutex
 }
 
 func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Baseline, error) {
@@ -60,12 +61,13 @@ func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Ba
 		Config:  cfg,
 		Genesis: genesis,
 		Service: service,
+		Version: defaultABCISemanticVersion,
 
 		CheckTxState:   checkTxState,
 		DeliverTxState: deliverTxState,
 		CommitState:    commitState,
 
-		Version: defaultABCISemanticVersion,
+		mutex: &sync.Mutex{},
 	}, nil
 }
 
@@ -118,7 +120,36 @@ func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseD
 
 func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	common.Log.Debugf("EndBlock; %v", req)
-	return abcitypes.ResponseEndBlock{}
+	validatorUpdates := make([]abcitypes.ValidatorUpdate, 0)
+
+	read := true
+	for read {
+		select {
+		case delta := <-b.Service.validatorDeltasChannel:
+			validator := b.CommitState.GetValidator(delta.Address)
+			if validator == nil {
+				validator = validatorFactory(delta.PublicKey, 0)
+				b.CommitState.Validators = append(b.CommitState.Validators, validator)
+				common.Log.Debugf("adding new validator %s in block %d", validator.Address, req.Height)
+			}
+
+			common.Log.Debugf("applying validator staking delta to validator %s in block %d", validator.Address, req.Height)
+			validator.AdjustStake(delta.StakingDelta)
+			validatorUpdates = append(validatorUpdates, validator.AsValidatorUpdate())
+		default:
+			// no more buffered updates
+			read = false
+		}
+	}
+
+	if b.CommitState.TotalVotingPower() == 0 {
+		common.Log.Debugf("all validator staking power withdrawn as of block %d; reverting to default validator set", req.Height)
+		validatorUpdates = append(validatorUpdates, defaultValidatorsFactory(b.Genesis)...)
+	}
+
+	return abcitypes.ResponseEndBlock{
+		ValidatorUpdates: validatorUpdates,
+	}
 }
 
 // Info should return a response comprised of the following:
@@ -139,27 +170,13 @@ func (b *Baseline) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 }
 
 func (b *Baseline) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
-	validators := make([]abcitypes.ValidatorUpdate, 0)
-	for _, validator := range b.Genesis.Validators {
-		validators = append(validators, abcitypes.ValidatorUpdate{
-			PubKey: crypto.PublicKey{
-				Sum: &crypto.PublicKey_Ed25519{
-					Ed25519: validator.PubKey.Bytes(),
-				},
-			},
-			Power: validator.Power,
-		})
+	validators := defaultValidatorsFactory(b.Genesis)
+	for _, validator := range validators {
+		b.CommitState.Validators = append(
+			b.CommitState.Validators,
+			validatorFactory(validator.PubKey.GetEd25519(), validator.Power),
+		)
 	}
-
-	pubkey, _ := base64.StdEncoding.DecodeString("6su8FUyDc9fLCRNODSovoqS9r4v+8ge5Epm43OQAQr0=")
-	validators = append(validators, abcitypes.ValidatorUpdate{
-		PubKey: crypto.PublicKey{
-			Sum: &crypto.PublicKey_Ed25519{
-				Ed25519: pubkey,
-			},
-		},
-		Power: 1,
-	})
 
 	return abcitypes.ResponseInitChain{
 		AppHash:         b.CommitState.Root,

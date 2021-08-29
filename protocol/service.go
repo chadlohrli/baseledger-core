@@ -2,7 +2,10 @@ package protocol
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/kthomas/go-natsutil"
 	"github.com/nats-io/nats.go"
@@ -16,6 +19,11 @@ import (
 	"github.com/provideplatform/provide-go/api/vault"
 )
 
+const defaultStakingEventsBufferedChannelSize = 64
+const defaultValidatorEventsBufferedChannelSize = 64
+
+const stakingEventHandlerSleepInterval = 250 * time.Millisecond
+
 // Service instance exposes a compliant implementation of the Baseline protocol
 type Service struct {
 	baseline *baseline.Service
@@ -24,7 +32,16 @@ type Service struct {
 	privacy  *privacy.Service
 	vault    *vault.Service
 
+	mutex                       *sync.Mutex
 	stakingContractSubscription *nats.Subscription
+	stakingEventsChannel        chan []byte
+	validatorDeltasChannel      chan *ValidatorStakingDelta
+}
+
+type ValidatorStakingDelta struct {
+	Address      []byte
+	PublicKey    []byte
+	StakingDelta int64 // voting power delta to be applied
 }
 
 func authorizeAccessToken(refreshToken string) (*ident.Token, error) {
@@ -55,6 +72,10 @@ func serviceFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Service, er
 		nchain:   nchain.InitNChainService(*token.AccessToken),
 		privacy:  privacy.InitPrivacyService(*token.AccessToken),
 		vault:    vault.InitVaultService(token.AccessToken),
+
+		mutex:                  &sync.Mutex{},
+		stakingEventsChannel:   make(chan []byte, defaultStakingEventsBufferedChannelSize),
+		validatorDeltasChannel: make(chan *ValidatorStakingDelta, defaultValidatorEventsBufferedChannelSize),
 	}
 
 	var stateParams *StateParams
@@ -109,9 +130,50 @@ func (s *Service) initStaking(token string, cfg *common.Config, params *StatePar
 			common.Log.Warningf("failed to subscribe to configured staking contract address: %s; %s", *cfg.StakingContractAddress, err.Error())
 			return err
 		}
+
+		err = s.handleStakingEvents()
+		if err != nil {
+			common.Log.Warningf("failed to initialize staking event handler for configured staking contract address: %s; %s", *cfg.StakingContractAddress, err.Error())
+			return err
+		}
 	} else {
 		common.Log.Warning("no staking contract address configured; consensus limited to static validator set")
 	}
+
+	return nil
+}
+
+// handleStakingEvents starts processing messages buffered in the staking events channel
+func (s *Service) handleStakingEvents() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.stakingEventsChannel == nil {
+		return errors.New("staking events channel closed")
+	}
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-s.stakingEventsChannel:
+				if !ok {
+					common.Log.Debugf("staking event handler exiting")
+					return
+				}
+
+				common.Log.Debugf("processing %d-byte staking event: %s", len(event), string(event))
+				params := map[string]interface{}{}
+				err := json.Unmarshal(event, &params)
+				if err != nil {
+					common.Log.Warningf("failed to unmarshal %d-byte staking event; %s", len(event), err.Error())
+				} else {
+					common.Log.Debugf("process event with params: %v", params)
+				}
+			default:
+				time.Sleep(stakingEventHandlerSleepInterval)
+			}
+		}
+	}()
 
 	return nil
 }
@@ -153,6 +215,14 @@ func (s *Service) requireStakingContract(token, networkName string, params *Stak
 // unsubscribeStakingSubscription gracefully shuts down and removes any active
 // subscription to events emitted by the configured staking contract
 func (s *Service) unsubscribeStakingSubscription() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.stakingEventsChannel != nil {
+		close(s.stakingEventsChannel)
+		s.stakingEventsChannel = nil
+	}
+
 	if s.stakingContractSubscription != nil {
 		err := s.stakingContractSubscription.Unsubscribe()
 		if err != nil {
@@ -194,6 +264,12 @@ func (s *Service) startStakingSubscriptions(token string, contract *nchain.Contr
 	conn, _ := natsutil.GetSharedNatsConnection(&token)
 	subject := fmt.Sprintf("network.%s.contracts.%s", contract.NetworkID, *contract.Address)
 	subscription, err := conn.Subscribe(subject, func(msg *nats.Msg) {
+		defer func() {
+			if r := recover(); r != nil {
+				common.Log.Warningf("recovered during processing %d-byte NATS contract event on subject: %s; %s", len(msg.Data), msg.Subject, r)
+			}
+		}()
+
 		common.Log.Debugf("consuming %d-byte NATS contract event on subject: %s", len(msg.Data), msg.Subject)
 
 		// TODO: unmarshal to StakingContractEvent to handle the following staking contract events:
@@ -242,6 +318,17 @@ func (s *Service) startStakingSubscriptions(token string, contract *nchain.Contr
 		// Staking contract source: https://github.com/Baseledger/baseledger-contracts/blob/master/contracts/Staking.sol#L61
 		// Example transaction on Ropsten: https://ropsten.etherscan.io/tx/0xd85f15cd13749b7572485f4cbccc197743e9078ac5f60e4a2aa9a55122427412
 
+		var ok bool
+		select {
+		case s.stakingEventsChannel <- msg.Data:
+			ok = true
+		default:
+			ok = false
+		}
+
+		if ok {
+			msg.Ack()
+		}
 	})
 
 	if err != nil {

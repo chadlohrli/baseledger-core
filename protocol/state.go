@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -20,11 +21,22 @@ func init() {
 type State struct {
 	path string `json:"-"`
 
-	Name       string             `json:"name"`
-	Height     int64              `json:"height"`
-	Root       []byte             `json:"root"`
-	Staking    *StakingParams     `json:"staking"`
-	Validators []*types.Validator `json:"validators"`
+	Name       string         `json:"name"`
+	Height     int64          `json:"height"`
+	Root       []byte         `json:"root"`
+	Staking    *StakingParams `json:"staking"`
+	Validators []*Validator   `json:"validators"`
+}
+
+// GetValidator returns the validator if it exists in the state instance, or nil
+func (s *State) GetValidator(address []byte) *Validator {
+	for _, validator := range s.Validators {
+		if bytes.Equal(address, []byte(*validator.Address)) {
+			return validator
+		}
+	}
+
+	return nil
 }
 
 func (s *State) Save() error {
@@ -43,6 +55,17 @@ func (s *State) Save() error {
 	}
 
 	return nil
+}
+
+// TotalVotingPower returns the total validator votinmg power, as it exists in the state instance
+func (s *State) TotalVotingPower() int64 {
+	power := int64(0)
+
+	for _, validator := range s.Validators {
+		power += validator.VotingPower()
+	}
+
+	return power
 }
 
 func stateFactory(cfg *common.Config, name string, genesis *types.GenesisDoc) (*State, error) {
@@ -80,6 +103,6 @@ func stateFactory(cfg *common.Config, name string, genesis *types.GenesisDoc) (*
 		Height:     0,
 		Root:       []byte{},
 		Staking:    staking,
-		Validators: make([]*types.Validator, 0),
+		Validators: make([]*Validator, 0),
 	}, nil
 }
