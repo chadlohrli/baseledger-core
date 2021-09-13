@@ -96,7 +96,7 @@ BASELEDGER_MODE=full \
 LOG_LEVEL=debug \
 BASELEDGER_LOG_LEVEL='main:info,*:error' \
 BASELEDGER_GENESIS_URL=http://genesis.peachtree.baseledger.provide.network:1337/genesis \
-BASELEDGER_PERSISTENT_PEERS=e0f0ce7a37be16ede67f70831d5608c5ea6e8540@genesis.peachtree.baseledger.provide.network:33333 \
+BASELEDGER_PERSISTENT_PEERS=187b285fcf8bff3f08f5e61cfe05b713a4d32356@genesis.peachtree.baseledger.provide.network:33333 \
 BASELEDGER_PEER_ALIAS=<your alias> \
 ./.bin/node
 ```
@@ -116,7 +116,7 @@ BASELEDGER_MODE=validator \
 LOG_LEVEL=debug \
 BASELEDGER_LOG_LEVEL='main:info,*:error' \
 BASELEDGER_GENESIS_URL=http://genesis.peachtree.baseledger.provide.network:1337/genesis \
-BASELEDGER_PERSISTENT_PEERS=e0f0ce7a37be16ede67f70831d5608c5ea6e8540@genesis.peachtree.baseledger.provide.network:33333 \
+BASELEDGER_PERSISTENT_PEERS=187b285fcf8bff3f08f5e61cfe05b713a4d32356@genesis.peachtree.baseledger.provide.network:33333 \
 BASELEDGER_PEER_ALIAS=<your alias> \
 ./.bin/node
 ```
