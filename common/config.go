@@ -252,11 +252,6 @@ func ConfigFactory() (*Config, error) {
 		p2pPersistentPeerMaxDialPeriod = duration
 	}
 
-	p2pPrivatePeerIDs := ""
-	if os.Getenv("BASELEDGER_P2P_PRIVATE_PEER_IDS") != "" {
-		p2pPrivatePeerIDs = os.Getenv("BASELEDGER_P2P_PRIVATE_PEER_IDS")
-	}
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -289,9 +284,10 @@ func ConfigFactory() (*Config, error) {
 		p2pMaxPacketMessagePayloadSize = int(size)
 	}
 
-	p2pSeedPeers := os.Getenv("BASELEDGER_SEEDS")
 	// p2pBootstrapPeers := os.Getenv("BASELEDGER_BOOTSTRAP_PEERS")
 	p2pPersistentPeers := os.Getenv("BASELEDGER_PERSISTENT_PEERS")
+	p2pPrivatePeerIDs := os.Getenv("BASELEDGER_PRIVATE_PEER_IDS")
+	p2pSeedPeers := os.Getenv("BASELEDGER_SEEDS")
 
 	var provideRefreshToken *string
 	if os.Getenv("PROVIDE_REFRESH_TOKEN") != "" {
