@@ -252,6 +252,11 @@ func ConfigFactory() (*Config, error) {
 		p2pPersistentPeerMaxDialPeriod = duration
 	}
 
+	p2pPrivatePeerIDs := ""
+	if os.Getenv("BASELEDGER_P2P_PRIVATE_PEER_IDS") != "" {
+		p2pPrivatePeerIDs = os.Getenv("BASELEDGER_P2P_PRIVATE_PEER_IDS")
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -652,7 +657,7 @@ func ConfigFactory() (*Config, error) {
 
 				// Comma separated list of peer IDs to keep private (will not be gossiped to
 				// other peers)
-				// PrivatePeerIDs string `mapstructure:"private-peer-ids"`
+				PrivatePeerIDs: p2pPrivatePeerIDs,
 
 				// Toggle to disable guard against peers connecting from the same ip.
 				AllowDuplicateIP: false,
