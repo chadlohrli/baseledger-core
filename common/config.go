@@ -653,7 +653,7 @@ func ConfigFactory() (*Config, error) {
 				// RecvRate int64 `mapstructure:"recv-rate"`
 
 				// Set true to enable the peer-exchange reactor
-				PexReactor: true,
+				PexReactor: !strings.EqualFold(mode, baseledgerModeValidator),
 
 				// Comma separated list of peer IDs to keep private (will not be gossiped to
 				// other peers)
