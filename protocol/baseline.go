@@ -33,7 +33,8 @@ type Baseline struct {
 	DeliverTxState *State
 	CommitState    *State
 
-	mutex *sync.Mutex
+	mutex         *sync.Mutex
+	queryHandlers *QueryHandlers
 }
 
 func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Baseline, error) {
@@ -67,7 +68,8 @@ func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Ba
 		DeliverTxState: deliverTxState,
 		CommitState:    commitState,
 
-		mutex: &sync.Mutex{},
+		mutex:         &sync.Mutex{},
+		queryHandlers: queryHandlersFactory(),
 	}, nil
 }
 
@@ -206,8 +208,14 @@ func (b *Baseline) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseS
 }
 
 func (b *Baseline) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
-	common.Log.Debugf("Query; %v", req)
-	return abcitypes.ResponseQuery{Code: 0}
+	resp, err := b.queryHandlers.handle(req)
+	if resp != nil && err == nil {
+		return *resp
+	}
+
+	return abcitypes.ResponseQuery{
+		Code: 0,
+	}
 }
 
 // Shutdown handles the consolidated shutdown of all ABCI-owned resources
