@@ -13,7 +13,7 @@ import (
 
 const queryRegexPeerAddressFilter = `^\/p2p\/filter\/addr\/(.*)$`
 const peerAddressFilterResponseCode = 1
-const peerAddressFilterResponseTimeout = time.Millisecond * 2500
+const peerAddressFilterResponseTimeout = time.Millisecond * 100
 
 type QueryHandlers struct {
 	expressions map[string]*regexp.Regexp
