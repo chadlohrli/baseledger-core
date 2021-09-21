@@ -11,6 +11,9 @@ import (
 	abcitypes "github.com/providenetwork/tendermint/abci/types"
 )
 
+const queryBlockLatest = "latest"
+const queryRegexEntropyFetch = `^\/baseline\/entropy\/fetch\/(.*)$`
+
 const queryRegexPeerAddressFilter = `^\/p2p\/filter\/addr\/(.*)$`
 const peerAddressFilterResponseCode = 1
 const peerAddressFilterResponseTimeout = time.Millisecond * 100
@@ -23,9 +26,11 @@ type QueryHandlers struct {
 func queryHandlersFactory() *QueryHandlers {
 	return &QueryHandlers{
 		expressions: map[string]*regexp.Regexp{
+			queryRegexEntropyFetch:      regexp.MustCompile(queryRegexEntropyFetch),
 			queryRegexPeerAddressFilter: regexp.MustCompile(queryRegexPeerAddressFilter),
 		},
 		handlers: map[string]func(abcitypes.RequestQuery) abcitypes.ResponseQuery{
+			queryRegexEntropyFetch:      fetchEntropy,
 			queryRegexPeerAddressFilter: filterPeerQuery,
 		},
 	}
@@ -57,6 +62,13 @@ func filterPeerQuery(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	conn.Close()
 
 	common.Log.Tracef("peer reachable: %s", addr)
+	return abcitypes.ResponseQuery{
+		Code: 0,
+	}
+}
+
+func fetchEntropy(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
+	// TODO: the work... query ethereum, chainlink network, etc....
 	return abcitypes.ResponseQuery{
 		Code: 0,
 	}

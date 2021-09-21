@@ -18,6 +18,7 @@ const eventTypeBlock = "block"
 const eventNewHeader = "header"
 
 const defaultABCISemanticVersion = "v1.0.0"
+const defaultEntropyBlockInterval = 100
 
 // Baseline is the tendermint Application Blockchain Interface (ABCI);
 // it must conform to the ABCI specification. Use extreme care when
@@ -122,32 +123,13 @@ func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseD
 
 func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	common.Log.Debugf("EndBlock; %v", req)
-	validatorUpdates := make([]abcitypes.ValidatorUpdate, 0)
 
-	read := true
-	for read {
-		select {
-		case delta := <-b.Service.validatorDeltasChannel:
-			validator := b.CommitState.GetValidator(delta.Address)
-			if validator == nil {
-				validator = validatorFactory(delta.PublicKey, 0)
-				b.CommitState.Validators = append(b.CommitState.Validators, validator)
-				common.Log.Debugf("adding new validator %s in block %d", validator.Address, req.Height)
-			}
-
-			common.Log.Debugf("applying validator staking delta to validator %s in block %d", validator.Address, req.Height)
-			validator.AdjustStake(delta.StakingDelta)
-			validatorUpdates = append(validatorUpdates, validator.AsValidatorUpdate())
-		default:
-			// no more buffered updates
-			read = false
-		}
+	err := b.resolveRandomBeaconEntropy(req)
+	if err != nil {
+		common.Log.Warningf("failed to resolve random beacon entropy; %s", err.Error())
 	}
 
-	if b.CommitState.TotalVotingPower() == 0 {
-		common.Log.Debugf("all validator staking power withdrawn as of block %d; reverting to default validator set", req.Height)
-		validatorUpdates = append(validatorUpdates, defaultValidatorsFactory(b.Genesis)...)
-	}
+	validatorUpdates := b.resolveValidatorUpdates(req)
 
 	return abcitypes.ResponseEndBlock{
 		ValidatorUpdates: validatorUpdates,
@@ -226,4 +208,47 @@ func (b *Baseline) Shutdown() error {
 	}
 
 	return nil
+}
+
+// resolveBeaconEntropy resolves entropy for a random beacon and dispatches
+// a transaction to store this entropy as part of the next block
+func (b *Baseline) resolveRandomBeaconEntropy(req abcitypes.RequestEndBlock) error {
+	if req.Height%defaultEntropyBlockInterval == 0 {
+		// store latest L1-derived entropy...
+		common.Log.Debugf("TODO-- fetch and store entropy at height... %d", req.Height)
+	}
+
+	return nil
+}
+
+// resolveValidatorUpdates for the given block
+func (b *Baseline) resolveValidatorUpdates(req abcitypes.RequestEndBlock) []abcitypes.ValidatorUpdate {
+	validatorUpdates := make([]abcitypes.ValidatorUpdate, 0)
+
+	read := true
+	for read {
+		select {
+		case delta := <-b.Service.validatorDeltasChannel:
+			validator := b.CommitState.GetValidator(delta.Address)
+			if validator == nil {
+				validator = validatorFactory(delta.PublicKey, 0)
+				b.CommitState.Validators = append(b.CommitState.Validators, validator)
+				common.Log.Debugf("adding new validator %s in block %d", validator.Address, req.Height)
+			}
+
+			common.Log.Debugf("applying validator staking delta to validator %s in block %d", validator.Address, req.Height)
+			validator.AdjustStake(delta.StakingDelta)
+			validatorUpdates = append(validatorUpdates, validator.AsValidatorUpdate())
+		default:
+			// no more buffered updates
+			read = false
+		}
+	}
+
+	if b.CommitState.TotalVotingPower() == 0 {
+		common.Log.Debugf("all validator staking power withdrawn as of block %d; reverting to default validator set", req.Height)
+		validatorUpdates = append(validatorUpdates, defaultValidatorsFactory(b.Genesis)...)
+	}
+
+	return validatorUpdates
 }
