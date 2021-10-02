@@ -234,3 +234,15 @@ An abstract proxy staking mechanism is being developed to add composable delegat
 💡 _This is a great idea for a hackathon project at the upcoming [EthAtlanta](https://ethatl.com) hackathon, happening October 1-3._
 
 _Additional documentation forthcoming._
+
+## Entropy Beacon
+
+An entropy beacon is exposed via RPC by the `/baseline/entropy/fetch` query. Every `n` blocks, where `n` is configurable for each Baseledger network, randomness is injected into the Baseledger block headers. This entropy can be used by callers to effectively seed MPC ceremonies which can be trusted even when none of the parties are honest. A [verifiable random function](https://docs.chain.link/docs/chainlink-vrf), deployed as a smart contract on the public blockchain, is consumed every `n` blocks, with the result injected into the header. The following VRF consumer contracts are deployed:
+
+| Network | VRF Consumer Contract Address | Block Interval |
+|--|--|--|
+| mainnet | -- | -- |
+| ropsten | -- | -- |
+| rinkeby | -- | -- |
+| kovan | -- | -- |
+| goerli | -- | -- |
