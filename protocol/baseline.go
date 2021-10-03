@@ -218,25 +218,24 @@ func (b *Baseline) Shutdown() error {
 // a transaction to store this entropy as part of the next block
 func (b *Baseline) resolveRandomBeaconEntropy(req abcitypes.RequestEndBlock) error {
 
-	// create a query randomness query
-	reqQuery := abcitypes.RequestQuery {
-		Path: "/baseline/entropy/fetch",
-		Height: 0,
-		Prove: false,
-	}
-	resQuery := b.Query(reqQuery)
-	common.Log.Debugf("%s", resQuery)
-	//os.Exit(1)
-
-	// 1. parse resQuery to get randomness 
-	//randomness := ""
-	// 2. maybe clean up
-	// 3. store in block header
-
-
-
 	if req.Height%defaultEntropyBlockInterval == 0 {
 		// store latest L1-derived entropy...
+		// create a query randomness query
+		reqQuery := abcitypes.RequestQuery {
+			Path: "/baseline/entropy/fetch",
+			Height: 0,
+			Prove: false,
+		}
+		resQuery := b.Query(reqQuery)
+		common.Log.Debugf("%s", resQuery)
+		//os.Exit(1)
+
+		randomness := resQuery.Value
+
+		// 1.  TODO: parse  randomness
+		// ex. randomness = 0: uint256: 11274928295812345  (as bytes)
+		
+		// 2. store in block header
 		common.Log.Debugf("TODO-- fetch and store entropy at height... %d", req.Height)
 	}
 

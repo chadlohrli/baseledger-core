@@ -77,10 +77,12 @@ func fetchEntropy(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	// 1. Call randomResult to get randomness
 	// 2. Tx getRandomNumber to generate new randomness for next validator 
 	// Edge case -- contract may not generate randomness in time for first validator
-	// Should be called during initChain
+	// Should be called during initChain?
 
-	// os read from : ENTROPY_CONTRACT_ADDRESS
-	//nchain.ExecuteContract()
+	// nchain.ExecuteContract(token, contractID string, params map[string]interface{})
+	// How to specify the smart contract method from params map[string]interface{}?
+	nchain.ExecuteContract(os.Getenv("ProvideRefreshToken"), os.Getenv("ENTROPY_CONTRACT_ADDRESS"),getRandomNumber)
+	abcitypes.ResponseQuery.Value  := nchain.ExecuteContract(os.Getenv("ProvideRefreshToken"), os.Getenv("ENTROPY_CONTRACT_ADDRESS"), randomResult)
 
 	return abcitypes.ResponseQuery{
 		Code: 0,
