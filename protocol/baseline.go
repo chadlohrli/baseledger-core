@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	//"os"
 
 	"github.com/providenetwork/baseledger/common"
 	abcitypes "github.com/providenetwork/tendermint/abci/types"
@@ -124,6 +125,7 @@ func (b *Baseline) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseD
 func (b *Baseline) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	common.Log.Debugf("EndBlock; %v", req)
 
+	// check config to see if node is a validator vs full node
 	err := b.resolveRandomBeaconEntropy(req)
 	if err != nil {
 		common.Log.Warningf("failed to resolve random beacon entropy; %s", err.Error())
@@ -213,6 +215,17 @@ func (b *Baseline) Shutdown() error {
 // resolveBeaconEntropy resolves entropy for a random beacon and dispatches
 // a transaction to store this entropy as part of the next block
 func (b *Baseline) resolveRandomBeaconEntropy(req abcitypes.RequestEndBlock) error {
+	
+	// create a query randomness query
+	reqQuery := abcitypes.RequestQuery {
+		Path: "/baseline/entropy/fetch",
+		Height: 0,
+		Prove: false,
+	}
+	resQuery := b.Query(reqQuery)
+	//common.Log.Debugf("%s", resQuery)
+	//os.Exit(1)
+	
 	if req.Height%defaultEntropyBlockInterval == 0 {
 		// store latest L1-derived entropy...
 		common.Log.Debugf("TODO-- fetch and store entropy at height... %d", req.Height)

@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	//"os"
 
 	"github.com/providenetwork/baseledger/common"
 	abcitypes "github.com/providenetwork/tendermint/abci/types"
@@ -69,6 +70,7 @@ func filterPeerQuery(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 
 func fetchEntropy(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	// TODO: the work... query ethereum, chainlink network, etc....
+	common.Log.Debugf("in query.fetchEntropy")
 	return abcitypes.ResponseQuery{
 		Code: 0,
 	}
