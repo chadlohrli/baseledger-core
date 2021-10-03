@@ -231,6 +231,7 @@ func (b *Baseline) resolveRandomBeaconEntropy(req abcitypes.RequestEndBlock) err
 		//os.Exit(1)
 
 		randomness := resQuery.Value
+		common.Log.Debugf("%s", randomness)
 
 		// 1.  TODO: parse  randomness
 		// ex. randomness = 0: uint256: 11274928295812345  (as bytes)

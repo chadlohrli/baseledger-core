@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	//"os"
+	"os"
 
 	"github.com/providenetwork/baseledger/common"
 	abcitypes "github.com/providenetwork/tendermint/abci/types"
@@ -74,17 +74,32 @@ func filterPeerQuery(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 func fetchEntropy(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	// TODO: the work... query ethereum, chainlink network, etc....
 	common.Log.Debugf("in query.fetchEntropy")
-	// 1. Call randomResult to get randomness
-	// 2. Tx getRandomNumber to generate new randomness for next validator 
+
 	// Edge case -- contract may not generate randomness in time for first validator
 	// Should be called during initChain?
 
-	// nchain.ExecuteContract(token, contractID string, params map[string]interface{})
-	// How to specify the smart contract method from params map[string]interface{}?
-	nchain.ExecuteContract(os.Getenv("ProvideRefreshToken"), os.Getenv("ENTROPY_CONTRACT_ADDRESS"),getRandomNumber)
-	abcitypes.ResponseQuery.Value  := nchain.ExecuteContract(os.Getenv("ProvideRefreshToken"), os.Getenv("ENTROPY_CONTRACT_ADDRESS"), randomResult)
+	// Read Env Vars
+	contractId := os.Getenv("ENTROPY_CONTRACT_ADDRESS")
+	token := os.Getenv("VAULT_REFRESH_TOKEN")
 
-	return abcitypes.ResponseQuery{
-		Code: 0,
+	var method1 map[string]interface{} // generate randomness
+	var method2 map[string]interface{} // get randomness
+	var randomness []byte
+
+	// 1. Call randomResult to get randomness
+	nchain.ExecuteContract(token, contractId, method1)
+	// 2. Tx getRandomNumber to generate new randomness for next validator 
+	contractResponse, err := nchain.ExecuteContract(token, contractId, method2)
+	common.Log.Debugf("%s", contractResponse)
+	// parse contract response
+	if err != nil {
+		// error out
 	}
+
+	resQuery := abcitypes.ResponseQuery {
+		Code: 0,
+		Value: randomness,
+	}
+
+	return resQuery
 }
