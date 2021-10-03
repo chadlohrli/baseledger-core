@@ -10,6 +10,7 @@ import (
 
 	"github.com/providenetwork/baseledger/common"
 	abcitypes "github.com/providenetwork/tendermint/abci/types"
+	nchain "github.com/provideplatform/provide-go/api/nchain"
 )
 
 const queryBlockLatest = "latest"
@@ -22,9 +23,10 @@ const peerAddressFilterResponseTimeout = time.Millisecond * 100
 type QueryHandlers struct {
 	expressions map[string]*regexp.Regexp
 	handlers    map[string]func(abcitypes.RequestQuery) abcitypes.ResponseQuery
+	nchain   	*nchain.Service
 }
 
-func queryHandlersFactory() *QueryHandlers {
+func queryHandlersFactory(nchain *nchain.Service) *QueryHandlers {
 	return &QueryHandlers{
 		expressions: map[string]*regexp.Regexp{
 			queryRegexEntropyFetch:      regexp.MustCompile(queryRegexEntropyFetch),
@@ -34,6 +36,7 @@ func queryHandlersFactory() *QueryHandlers {
 			queryRegexEntropyFetch:      fetchEntropy,
 			queryRegexPeerAddressFilter: filterPeerQuery,
 		},
+		nchain: nchain,
 	}
 }
 
@@ -71,6 +74,14 @@ func filterPeerQuery(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 func fetchEntropy(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	// TODO: the work... query ethereum, chainlink network, etc....
 	common.Log.Debugf("in query.fetchEntropy")
+	// 1. Call randomResult to get randomness
+	// 2. Tx getRandomNumber to generate new randomness for next validator 
+	// Edge case -- contract may not generate randomness in time for first validator
+	// Should be called during initChain
+
+	// os read from : ENTROPY_CONTRACT_ADDRESS
+	//nchain.ExecuteContract()
+
 	return abcitypes.ResponseQuery{
 		Code: 0,
 	}

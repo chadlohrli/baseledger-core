@@ -71,7 +71,7 @@ func BaselineProtocolFactory(cfg *common.Config, genesis *types.GenesisDoc) (*Ba
 		CommitState:    commitState,
 
 		mutex:         &sync.Mutex{},
-		queryHandlers: queryHandlersFactory(),
+		queryHandlers: queryHandlersFactory(service.nchain),
 	}, nil
 }
 
@@ -164,6 +164,8 @@ func (b *Baseline) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseI
 		)
 	}
 
+	// TODO: call to entropy should probably happen here 
+
 	return abcitypes.ResponseInitChain{
 		AppHash:         b.CommitState.Root,
 		ConsensusParams: req.ConsensusParams,
@@ -215,7 +217,7 @@ func (b *Baseline) Shutdown() error {
 // resolveBeaconEntropy resolves entropy for a random beacon and dispatches
 // a transaction to store this entropy as part of the next block
 func (b *Baseline) resolveRandomBeaconEntropy(req abcitypes.RequestEndBlock) error {
-	
+
 	// create a query randomness query
 	reqQuery := abcitypes.RequestQuery {
 		Path: "/baseline/entropy/fetch",
@@ -223,9 +225,16 @@ func (b *Baseline) resolveRandomBeaconEntropy(req abcitypes.RequestEndBlock) err
 		Prove: false,
 	}
 	resQuery := b.Query(reqQuery)
-	//common.Log.Debugf("%s", resQuery)
+	common.Log.Debugf("%s", resQuery)
 	//os.Exit(1)
-	
+
+	// 1. parse resQuery to get randomness 
+	//randomness := ""
+	// 2. maybe clean up
+	// 3. store in block header
+
+
+
 	if req.Height%defaultEntropyBlockInterval == 0 {
 		// store latest L1-derived entropy...
 		common.Log.Debugf("TODO-- fetch and store entropy at height... %d", req.Height)
